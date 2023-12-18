@@ -3,7 +3,7 @@ fn he () {}
 const hello Int = 01.0 + 10
 
 func wtf (param String) {
- log(something")
+ log("something")
 };
 
 fn helloWtf () {

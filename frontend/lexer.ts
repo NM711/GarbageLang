@@ -1,6 +1,5 @@
 import LexerGrammarTypes from "../types/lexer.grammar.types";
 import LexerLine from "./lexer.line";
-import { SyntaxError } from "./lexer.error";
 import { isNumber, isAlphabet } from "./utils";
 import type LexerTokenTypes from "../types/lexer.tokens";
 import type { IGarbageLangLexer } from "../types/lexer.types";
@@ -37,7 +36,7 @@ class GarbageLexer extends LexerLine implements IGarbageLangLexer {
     this.cleanKeyword();
   };
 
-  private stringLiteralSearch (data: string, i: number): void {
+  private stringLiteralSearch (data: string, i: number): number {
 
     let current = data[i];
     let next = data[i + 1];
@@ -50,14 +49,7 @@ class GarbageLexer extends LexerLine implements IGarbageLangLexer {
       ++i;
     };
 
-    // gotta add the next char since the loop cuts off when the next char === `"`;
-
-    if (next !== undefined) {
-      this.key += next;
-    };
-  
-      const numberOfQuotes: number = this.key.match(/["]/g)?.length || [].length
-
+    const numberOfQuotes: number = this.key.match(/["]/g)?.length || [].length
     // Implement more "Sophisticated" Line Errors Later On...
     switch (true) {
       case numberOfQuotes < 2: {
@@ -73,6 +65,8 @@ class GarbageLexer extends LexerLine implements IGarbageLangLexer {
       default:
         ++i;
     };
+
+    return i;
   };
 
   public tokenize(data: string): void {
@@ -121,14 +115,10 @@ class GarbageLexer extends LexerLine implements IGarbageLangLexer {
         // String Literal Search
 
         case char === `"`:
-          try {
-            this.key += char;
-            this.stringLiteralSearch(data, i)
-            this.pushTokenWithKeyAsLexeme(LexerGrammarTypes.LangTokenIdentifier.STRING_LITERAL);
-          } catch (e) {
-            console.error(e); 
-            process.exit(1);
-          };
+          this.key += char;
+          const index = this.stringLiteralSearch(data, i);
+          i = index;
+          this.pushTokenWithKeyAsLexeme(LexerGrammarTypes.LangTokenIdentifier.STRING_LITERAL);
         continue;
 
 
