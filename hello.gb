@@ -1,4 +1,4 @@
-fn he () {}
+func fn () {}
 
 const hello Int = 01.0 + 10
 

@@ -1,9 +1,8 @@
-import LexerGrammarTypes from "../types/lexer.grammar.types";
+import LexerGrammarTypes from "../../types/lexer.grammar.types";
 import LexerLine from "./lexer.line";
-import { isNumber, isAlphabet } from "./utils";
-import type LexerTokenTypes from "../types/lexer.tokens";
-import type { IGarbageLangLexer } from "../types/lexer.types";
-
+import { isNumber, isAlphabet } from "../utils";
+import type LexerTokenTypes from "../../types/lexer.tokens";
+import type { IGarbageLangLexer } from "../../types/lexer.types";
 
 // 1. Check if declared string has a closing quote
 // 2. Look for unexpected words or characters, for example if a word such as HELLO exists as a literal and no declarative
@@ -54,12 +53,12 @@ class GarbageLexer extends LexerLine implements IGarbageLangLexer {
     switch (true) {
       case numberOfQuotes < 2: {
         this.key = this.key.replace(/\n/g, "");
-        throw this.syntaxError({ where: this.key, what: "Missing an opening or ending quotation on string literal!" });
+        throw this.syntaxError(this.key, "Missing an opening or ending quotation on string literal!");
       };
 
       case numberOfQuotes > 2: {
         this.key = this.key.replace(/\n/g, "");
-        throw this.syntaxError({ where: this.key, what: "You can only have a single opening and closing quotation within a string literal, amount exceeded!" });
+        throw this.syntaxError(this.key, "You can only have a single opening and closing quotation within a string literal, amount exceeded!");
       };
 
       default:
@@ -136,6 +135,10 @@ class GarbageLexer extends LexerLine implements IGarbageLangLexer {
             this.pushTokenWithKeyAsLexeme(LexerGrammarTypes.LangTokenIdentifier.LITERAL);
           };
         };
+
+       // default: {
+       //   throw this.syntaxError(char, "Unexpected Character!")
+       // };
       };
     };
   };

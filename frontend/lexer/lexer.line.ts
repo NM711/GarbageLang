@@ -1,12 +1,12 @@
-import { SyntaxError } from "./lexer.error";
-import type { LineInfo, LineError} from "../types/lexer.types";
+import { callSyntaxError } from "../errors/syntax";
+import type { LineInfo } from "../../types/lexer.types"
 
 class LexerLine {
   protected lineInfo: LineInfo;
   constructor () {
     this.lineInfo = {
       lineNum: 1,
-      charNum: 1
+      charNum: 0
     };
   };
 
@@ -19,8 +19,8 @@ class LexerLine {
     };
   };
 
-  protected syntaxError ({ charNum = this.lineInfo.charNum, where, what }: LineError) {
-    throw new SyntaxError(`${what} ' ${where} ' at/around ===> (line: ${this.lineInfo.lineNum} | char: ${charNum})`);
+  protected syntaxError (where: string, what: string, charNum: number = this.lineInfo.charNum) {
+    return callSyntaxError({ what, where, line: this.lineInfo.lineNum, char: charNum });
   };
 };
 
