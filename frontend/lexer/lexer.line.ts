@@ -19,9 +19,9 @@ class LexerLine {
     };
   };
 
-  protected syntaxError (where: string, what: string, charNum: number = this.lineInfo.charNum) {
-    return callSyntaxError({ what, where, line: this.lineInfo.lineNum, char: charNum });
-  };
+ // protected syntaxError (where: string, what: string, charNum: number = this.lineInfo.charNum) {
+ //   return callSyntaxError({ what, where, line: this.lineInfo.lineNum, char: charNum });
+ // };
 };
 
 export default LexerLine;

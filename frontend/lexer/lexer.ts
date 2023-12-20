@@ -35,46 +35,11 @@ class GarbageLexer extends LexerLine implements IGarbageLangLexer {
     this.cleanKeyword();
   };
 
-  private stringLiteralSearch (data: string, i: number): number {
-
-    let current = data[i];
-    let next = data[i + 1];
-
-    while (next !== `"` && next !== "\n") {
-      if (!current || !next) break;
-      current = data[i];
-      next = data[i + 1];
-      this.key += next;
-      ++i;
-    };
-
-    const numberOfQuotes: number = this.key.match(/["]/g)?.length || [].length
-    // Implement more "Sophisticated" Line Errors Later On...
-    switch (true) {
-      case numberOfQuotes < 2: {
-        this.key = this.key.replace(/\n/g, "");
-        throw this.syntaxError(this.key, "Missing an opening or ending quotation on string literal!");
-      };
-
-      case numberOfQuotes > 2: {
-        this.key = this.key.replace(/\n/g, "");
-        throw this.syntaxError(this.key, "You can only have a single opening and closing quotation within a string literal, amount exceeded!");
-      };
-
-      default:
-        ++i;
-    };
-
-    return i;
-  };
-
   public tokenize(data: string): void {
-    for (let i = 0; i <= data.length; i++) {
-      let char: string = data[i];
-      let nextChar: string = data[i + 1];
+    for (let i = 0; i < data.length; i++) {
+      const char: string = data[i];
+      const nextChar: string = data[i + 1];
       const prevChar: string = data[i - 1];
-
-      if (!char) continue;
 
       this.updateLineInfo(char);
 
@@ -85,60 +50,48 @@ class GarbageLexer extends LexerLine implements IGarbageLangLexer {
       const isSpecialChar = LexerGrammarTypes.SpecialCharKeywordMap[char];
       const isOperator = LexerGrammarTypes.OperatorKeywordMap[char];
 
-
       switch (true) {
-
         // Numbers
         case isCharNum:
           this.key += char;
         continue;
-
-        case !isCharNum && isPrevCharNum && this.key.includes("."):
-          this.pushTokenWithKeyAsLexeme(LexerGrammarTypes.LangTokenIdentifier.FLOAT);
-        continue;
-
         case !isCharNum && isPrevCharNum:
-          this.pushTokenWithKeyAsLexeme(LexerGrammarTypes.LangTokenIdentifier.INT);
+          if (this.key.includes(".")) {
+             this.pushTokenWithKeyAsLexeme(LexerGrammarTypes.LangTokenIdentifier.FLOAT);
+          } else this.pushTokenWithKeyAsLexeme(LexerGrammarTypes.LangTokenIdentifier.INT);
         continue;
 
         // Lookup Check
 
         case isOperator !== undefined:
-          this.pushToken(char, isOperator);
+         this.pushToken(char, isOperator);
         continue;
 
         case isSpecialChar !== undefined:
           this.pushToken(char, isSpecialChar);
         continue;
 
-        // String Literal Search
+        case !char || !nextChar:
+          this.pushToken("EOF", LexerGrammarTypes.LangTokenIdentifier.EOF);
+        break;
 
-        case char === `"`:
-          this.key += char;
-          const index = this.stringLiteralSearch(data, i);
-          i = index;
-          this.pushTokenWithKeyAsLexeme(LexerGrammarTypes.LangTokenIdentifier.STRING_LITERAL);
-        continue;
+        default: {
+          if (isAlphabet(char)) {
+            this.key += char;
+            
+            const isDeclarative = LexerGrammarTypes.DeclarativeKeywordMap[this.key];
+            const isType = LexerGrammarTypes.DataTypeKeywordMap[this.key];
+
+            if (isDeclarative || isType) {
+             this.pushTokenWithKeyAsLexeme(isDeclarative ?? isType);
+            };
 
 
-        case isAlphabet(char): {
-          this.key += char;
-          const isDeclarative = LexerGrammarTypes.DeclarativeKeywordMap[this.key];
-          const isType = LexerGrammarTypes.DataTypeKeywordMap[this.key];
-
-          if (isDeclarative || isType) {
-            this.pushTokenWithKeyAsLexeme(isDeclarative ?? isType);
-          };
-
-          if (!isAlphabet(nextChar) && this.key !== "") {
-
-            this.pushTokenWithKeyAsLexeme(LexerGrammarTypes.LangTokenIdentifier.LITERAL);
+            if (!isAlphabet(nextChar) && this.key !== "") {
+              this.pushTokenWithKeyAsLexeme(LexerGrammarTypes.LangTokenIdentifier.LITERAL);
+            };
           };
         };
-
-       // default: {
-       //   throw this.syntaxError(char, "Unexpected Character!")
-       // };
       };
     };
   };

@@ -90,6 +90,9 @@ namespace AbstractSyntaxTreeTypes {
   };
 
   type TreeNodeType = IFStatementNode | ForStatementNode | FunctionDeclarationNode | VariableDeclarationNode | ProgramNode;
+
+  interface ITreeNode {
+  }
 };
 
 export default AbstractSyntaxTreeTypes;

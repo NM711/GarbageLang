@@ -27,10 +27,12 @@ namespace LexerGrammarTypes {
     LEFT_PARENTHESES,
     RIGHT_CURLY_BRACE,
     LEFT_CURLY_BRACE,
+    DOUBLE_QUOTE,
     
     // Literals
     LITERAL,
-    STRING_LITERAL,
+    // End of file
+    EOF,
 
     // Declaratives
     VARIABLE,
@@ -79,7 +81,8 @@ namespace LexerGrammarTypes {
    "{": LangTokenIdentifier.LEFT_CURLY_BRACE,
    ")": LangTokenIdentifier.RIGHT_PARENTHESES,
    "(": LangTokenIdentifier.LEFT_CURLY_BRACE,
-   ";": LangTokenIdentifier.SEMICOLON
+   ";": LangTokenIdentifier.SEMICOLON,
+   '"': LangTokenIdentifier.DOUBLE_QUOTE
   };
 
   export const OperatorKeywordMap: { [index: string]: LangTokenIdentifier } = {

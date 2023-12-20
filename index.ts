@@ -10,7 +10,9 @@ function main () {
   lexer.tokenize(fileData);
 
   const tokens = lexer.getTokens();
-  parser.parse(tokens);
+  parser.setTokens = tokens;
+
+  parser.parse();
 };
 
 main()

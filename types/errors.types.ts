@@ -1,18 +1,36 @@
 namespace FrontendErrors {
+
+  export interface IFrontendErrorParams {
+    message: string
+    line: number
+    char: number
+    at: string
+  };
+
   export class SyntaxError extends Error {
-    message: string;
-    constructor (message: string) {
-      super();
+    private char: number;
+    private line: number;
+    private at: string
+    constructor ({ message, at, line, char }: IFrontendErrorParams) {
+      super(message);
       this.name = "SyntaxError";
-      this.message = message;
+      this.line = line;
+      this.char = char;
+      this.at = at;
     };
   };
 
-  export interface LineError {
-    char: number,
-    line: number,
-    where: string,
-    what: string,
+  export class ParserError extends Error {
+    private char: number;
+    private line: number;
+    private at: string;
+    constructor ({ message, at, line, char }: IFrontendErrorParams) {
+      super(message);
+      this.name = "ParserError";
+      this.line = line;
+      this.char = char;
+      this.at = at;
+    };
   };
 };
 
