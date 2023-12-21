@@ -1,0 +1,31 @@
+{
+  "type": "Program",
+  "body": [
+    {
+      "type": "DeclarationVariable",
+      "identifier": {
+        "type": "Identifier",
+        "name": "cons",
+        "identiferType": "String"
+      },
+      "value": {
+        "type": "StringLiteral",
+        "value": "hello pos"
+      },
+      "isConstant": false
+    },
+    {
+      "type": "DeclarationVariable",
+      "identifier": {
+        "type": "Identifier",
+        "name": "heyyo",
+        "identiferType": "String"
+      },
+      "value": {
+        "type": "StringLiteral",
+        "value": "hi world"
+      },
+      "isConstant": true
+    }
+  ]
+}

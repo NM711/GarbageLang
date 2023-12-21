@@ -2,7 +2,7 @@ namespace LexerGrammarTypes {
 
   export enum LangTokenIdentifier {
     // Types
-    FLOAT,
+    FLOAT = 1,
     INT,
     STRING,
     ARRAY,
@@ -17,6 +17,7 @@ namespace LexerGrammarTypes {
     GREATER_OR_EQUAL,
     OR,
     AND,
+    EQUALITY,
     EQUAL,
     ADDITION,
     SUBTRACTION,
@@ -28,6 +29,7 @@ namespace LexerGrammarTypes {
     RIGHT_CURLY_BRACE,
     LEFT_CURLY_BRACE,
     DOUBLE_QUOTE,
+    LINE_BREAK,
     
     // Literals
     LITERAL,
@@ -71,17 +73,16 @@ namespace LexerGrammarTypes {
     "Array": LangTokenIdentifier.ARRAY,
     "Boolean": LangTokenIdentifier.BOOLEAN,
     "Float": LangTokenIdentifier.FLOAT,
-    "Int": LangTokenIdentifier.INT
+    "Int": LangTokenIdentifier.INT,
   };
 
   export const SpecialCharKeywordMap: { [index: string]: LangTokenIdentifier } = {
-   "|": LangTokenIdentifier.OR,
-   "&": LangTokenIdentifier.AND,
    "}": LangTokenIdentifier.RIGHT_CURLY_BRACE,
    "{": LangTokenIdentifier.LEFT_CURLY_BRACE,
    ")": LangTokenIdentifier.RIGHT_PARENTHESES,
-   "(": LangTokenIdentifier.LEFT_CURLY_BRACE,
-   ";": LangTokenIdentifier.SEMICOLON,
+   "(": LangTokenIdentifier.LEFT_PARENTHESES,
+   ';': LangTokenIdentifier.SEMICOLON,
+   '\n': LangTokenIdentifier.LINE_BREAK,
    '"': LangTokenIdentifier.DOUBLE_QUOTE
   };
 
@@ -94,7 +95,10 @@ namespace LexerGrammarTypes {
     "-": LangTokenIdentifier.SUBTRACTION,
     "*": LangTokenIdentifier.MULTIPLICATION,
     "/": LangTokenIdentifier.DIVISION,
-    "=": LangTokenIdentifier.EQUAL
+    "=": LangTokenIdentifier.EQUAL,
+    "===": LangTokenIdentifier.EQUALITY,
+    "|": LangTokenIdentifier.OR,
+    "&": LangTokenIdentifier.AND,
   };
 };
 

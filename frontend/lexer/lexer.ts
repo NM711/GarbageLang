@@ -1,23 +1,44 @@
 import LexerGrammarTypes from "../../types/lexer.grammar.types";
-import LexerLine from "./lexer.line";
 import { isNumber, isAlphabet } from "../utils";
+import type { LineInfo } from "../../types/lexer.types";
 import type LexerTokenTypes from "../../types/lexer.tokens";
-import type { IGarbageLangLexer } from "../../types/lexer.types";
 
-// 1. Check if declared string has a closing quote
-// 2. Look for unexpected words or characters, for example if a word such as HELLO exists as a literal and no declarative
-// token was generated before hand, throw an error because you cannot write a literal without a generated declarative.
-
-class GarbageLexer extends LexerLine implements IGarbageLangLexer {
+class GarbageLexer {
   private tokens: LexerTokenTypes.Token[];
   private key: string;
+  private data: string[];
+  private char: string | undefined;
+  protected lineInfo: LineInfo;
+
   constructor() {
-    super();
     this.tokens = [];
+    this.data = [];
     this.key = "";
+    this.char = "";
+    this.lineInfo = {
+      lineNum: 1,
+      charNum: 0
+    };
   };
 
-  private cleanKeyword (): void {
+  protected updateLineInfo (): void {
+    ++this.lineInfo.charNum;
+
+    if (this.char === "\n") {
+        this.lineInfo.charNum = 0;
+      ++this.lineInfo.lineNum;
+    };
+  };
+
+  public set setData(data: string) {
+    this.data = data.split("");
+  };
+
+  private eat() {
+    return this.data.shift();
+  };
+
+  private cleanKeyword(): void {
     this.key = "";
   };
 
@@ -35,68 +56,77 @@ class GarbageLexer extends LexerLine implements IGarbageLangLexer {
     this.cleanKeyword();
   };
 
-  public tokenize(data: string): void {
-    for (let i = 0; i < data.length; i++) {
-      const char: string = data[i];
-      const nextChar: string = data[i + 1];
-      const prevChar: string = data[i - 1];
+  private checkIfNumber(): void {
 
-      this.updateLineInfo(char);
+    while (isNumber(this.char as string)) {
+      if (!this.char) break;
+      this.key += this.char;
+      this.char = this.eat();
+    };
 
-      const isCharNum: boolean = isNumber(char);
-      const isPrevCharNum: boolean = isNumber(prevChar);
+    const isKeyNum: boolean = isNumber(this.key);
 
-
-      const isSpecialChar = LexerGrammarTypes.SpecialCharKeywordMap[char];
-      const isOperator = LexerGrammarTypes.OperatorKeywordMap[char];
-
-      switch (true) {
-        // Numbers
-        case isCharNum:
-          this.key += char;
-        continue;
-        case !isCharNum && isPrevCharNum:
-          if (this.key.includes(".")) {
-             this.pushTokenWithKeyAsLexeme(LexerGrammarTypes.LangTokenIdentifier.FLOAT);
-          } else this.pushTokenWithKeyAsLexeme(LexerGrammarTypes.LangTokenIdentifier.INT);
-        continue;
-
-        // Lookup Check
-
-        case isOperator !== undefined:
-         this.pushToken(char, isOperator);
-        continue;
-
-        case isSpecialChar !== undefined:
-          this.pushToken(char, isSpecialChar);
-        continue;
-
-        case !char || !nextChar:
-          this.pushToken("EOF", LexerGrammarTypes.LangTokenIdentifier.EOF);
-        break;
-
-        default: {
-          if (isAlphabet(char)) {
-            this.key += char;
-            
-            const isDeclarative = LexerGrammarTypes.DeclarativeKeywordMap[this.key];
-            const isType = LexerGrammarTypes.DataTypeKeywordMap[this.key];
-
-            if (isDeclarative || isType) {
-             this.pushTokenWithKeyAsLexeme(isDeclarative ?? isType);
-            };
-
-
-            if (!isAlphabet(nextChar) && this.key !== "") {
-              this.pushTokenWithKeyAsLexeme(LexerGrammarTypes.LangTokenIdentifier.LITERAL);
-            };
-          };
+    if (isKeyNum) {
+        if (this.key.includes(".")) {
+          this.pushTokenWithKeyAsLexeme(LexerGrammarTypes.LangTokenIdentifier.FLOAT);
+        } else {
+          this.pushTokenWithKeyAsLexeme(LexerGrammarTypes.LangTokenIdentifier.INT);
         };
+    };
+  };
+
+  private tokenize(): void {
+
+    while (this.data.length > 0) {
+
+      this.char = this.eat();
+
+      this.updateLineInfo();
+
+      if (!this.char) {
+        this.pushToken("EOF", LexerGrammarTypes.LangTokenIdentifier.EOF);
+        break;
+      };
+
+      this.checkIfNumber();
+
+      const lookups = {
+        special: LexerGrammarTypes.SpecialCharKeywordMap[this.char],
+        operator: LexerGrammarTypes.OperatorKeywordMap[this.char],
+        type: LexerGrammarTypes.DataTypeKeywordMap[this.key],
+        declared: LexerGrammarTypes.DeclarativeKeywordMap[this.key]
+      };
+
+     // console.log(this.char)
+
+      const isCharAlphabet: boolean = isAlphabet(this.char);
+
+      if (isCharAlphabet) {
+        this.key += this.char;
+        continue;
+      };
+  
+      if (!isCharAlphabet && this.key.length > 0) {
+          console.log(this.key)
+          if (lookups.type || lookups.declared) {
+            this.pushTokenWithKeyAsLexeme(lookups.type ?? lookups.declared);
+          } else {
+            this.pushTokenWithKeyAsLexeme(LexerGrammarTypes.LangTokenIdentifier.LITERAL);
+          };
+      };
+
+      if (lookups.special) {
+        this.pushToken(this.char, lookups.special);
+        continue;
+      } else if (lookups.operator) {
+        this.pushToken(this.char, lookups.operator);
+        continue;
       };
     };
   };
 
   public getTokens(): LexerTokenTypes.Token[] {
+    this.tokenize();
     return this.tokens;
   };
 };

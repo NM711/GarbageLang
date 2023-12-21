@@ -1,22 +1,24 @@
 namespace AbstractSyntaxTreeTypes {
 
   export enum Node {
-    PROGRAM,
-    IDENTIFIER,
-    STRING_LITERAL,
-    NUMBER_LITERAL,
-    DECLARATION_VARIABLE,
-    DECLARATION_FUNCTION,
-    STATEMENT_FOR,
-    STATEMENT_IF,
-    STATEMENT_SWITCH,
-    EXPRESSION_CALL,
-    EXPRESSION_STATEMENT,
-    EXPRESSION_BINARY,
-    EXPRESSION_UNARY
+    PROGRAM = "Program",
+    IDENTIFIER = "Identifier",
+    STRING_LITERAL = "StringLiteral",
+    NUMBER_LITERAL = "NumberLiteral",
+    DECLARATION_VARIABLE = "DeclarationVariable",
+    DECLARATION_FUNCTION = "DeclarationFunction",
+    STATEMENT_FOR = "StatementFor",
+    STATEMENT_IF = "StatementIf",
+    STATEMENT_SWITCH = "StatementSwitch",
+    EXPRESSION_CALL = "ExpressionCall",
+    EXPRESSION_STATEMENT = "ExpressionStatement",
+    EXPRESSION_BINARY = "ExpressionBinary",
+    EXPRESSION_UNARY = "ExpressionUnary"
   };
 
   type IdentifierType = "String" | "Null" | "Obj" | "Boolean" | "Float" | "Array" | "Int";
+
+  type ExpressionOperator = "===" | "|" | "&" | ">" | "<" | ">=" | "<=" | "+" | "-" | "/" | "*";
 
   interface DeclarationIdentifer {
     type: Node.IDENTIFIER
@@ -38,14 +40,18 @@ namespace AbstractSyntaxTreeTypes {
 
   type DeclarationLiteralValue = DeclarationValueNumber | DeclarationValueString;
 
-  type LeftOrRightBinaryExpressionType = DeclarationIdentiferWithType | DeclarationLiteralValue | BinaryExpression;
-
-  interface BinaryExpression {
-    type: Node.EXPRESSION_BINARY
-    left: LeftOrRightBinaryExpressionType
-    operator: string
-    right: LeftOrRightBinaryExpressionType
+ export type ExpressionBaseType<T, L, R> = {
+    type: T,
+    left: L,
+    operator: ExpressionOperator,
+    right: R
   };
+
+ export type UnaryExpressionType = ExpressionBaseType<Node.EXPRESSION_UNARY, DeclarationLiteralValue, DeclarationLiteralValue>;
+
+ export type BinaryExpressionType = ExpressionBaseType<Node.EXPRESSION_BINARY, UnaryExpressionType, UnaryExpressionType>;
+
+ export type ExpressionsType = UnaryExpressionType | BinaryExpressionType;
 
   // Nodes
 
@@ -68,25 +74,23 @@ namespace AbstractSyntaxTreeTypes {
     body: TreeNodeType[]
   };
 
-  // type -> for
-  // initializer -> for (let i = 0;)
-  // binaryExpr1 -> for (let i = 0; i < 5;)
-  // binaryExpr2 -> for (let i = 0; i < 5; i + 1)
-  // body => 
-  // for (let i = 0; i < 5; i + 1) {
-  // }
+
+  interface ForLoopExpressions {
+    initializer: VariableDeclarationNode
+    condition: ExpressionsType
+    iterator: UnaryExpressionType
+  };
 
   export interface ForStatementNode {
     type: Node.STATEMENT_FOR,
     initializer: VariableDeclarationNode,
-    binaryExpr1: BinaryExpression,
-    binaryExpr2: BinaryExpression,
+    info: ForLoopExpressions
     body: TreeNodeType[]
   };
 
   export interface IFStatementNode {
     type: Node.STATEMENT_IF,
-    test: BinaryExpression;
+    test: ExpressionsType
   };
 
   type TreeNodeType = IFStatementNode | ForStatementNode | FunctionDeclarationNode | VariableDeclarationNode | ProgramNode;
