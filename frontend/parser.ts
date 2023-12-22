@@ -1,7 +1,6 @@
 // consider renaming to GrammarTypes instead, since its no longer lexer specific
 import LexerGrammarTypes from "../types/lexer.grammar.types";
 import ExpressionTrees from "./expressions";
-import { callSyntaxError } from "./errors/syntax";
 import AbstractSyntaxTreeTypes from "../types/ast.types";
 import type LexerTokenTypes from "../types/lexer.tokens";
 import FrontendErrors from "../types/errors.types";
