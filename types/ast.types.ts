@@ -16,9 +16,9 @@ namespace AbstractSyntaxTreeTypes {
     EXPRESSION_UNARY = "ExpressionUnary"
   };
 
-  type IdentifierType = "String" | "Null" | "Obj" | "Boolean" | "Float" | "Array" | "Int";
+  export type IdentifierType = "String" | "Null" | "Obj" | "Boolean" | "Float" | "Array" | "Int";
 
-  type ExpressionOperator = "===" | "|" | "&" | ">" | "<" | ">=" | "<=" | "+" | "-" | "/" | "*";
+  export type ExpressionOperator = "===" | "|" | "&" | ">" | "<" | ">=" | "<=" | "+" | "-" | "/" | "*";
 
   interface DeclarationIdentifer {
     type: Node.IDENTIFIER
@@ -38,12 +38,12 @@ namespace AbstractSyntaxTreeTypes {
 
   type DeclarationValueNumber = DeclarationValue<Node.NUMBER_LITERAL, number>;
 
-  type DeclarationLiteralValue = DeclarationValueNumber | DeclarationValueString;
+  export type DeclarationLiteralValue = DeclarationValueNumber | DeclarationValueString | null;
 
  export type ExpressionBaseType<T, L, R> = {
     type: T,
     left: L,
-    operator: ExpressionOperator,
+    operator: ExpressionOperator | null,
     right: R
   };
 
@@ -64,7 +64,7 @@ namespace AbstractSyntaxTreeTypes {
     type: Node.DECLARATION_VARIABLE,
     isConstant: boolean,
     identifier: DeclarationIdentiferWithType
-    value: DeclarationLiteralValue
+    value: DeclarationLiteralValue | ExpressionsType
   };
 
   export interface FunctionDeclarationNode {

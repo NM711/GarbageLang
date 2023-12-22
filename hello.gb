@@ -1,5 +1,7 @@
 
-const someNum Float = 0.1;
+const someNum Float = 0.1 + 10 - 204;
+
+const anotherone Int = 5;
 
 let cons String  = "hello pos";
 

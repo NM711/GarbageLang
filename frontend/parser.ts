@@ -1,5 +1,6 @@
 // consider renaming to GrammarTypes instead, since its no longer lexer specific
 import LexerGrammarTypes from "../types/lexer.grammar.types";
+import ExpressionTrees from "./expressions";
 import { callSyntaxError } from "./errors/syntax";
 import AbstractSyntaxTreeTypes from "../types/ast.types";
 import type LexerTokenTypes from "../types/lexer.tokens";
@@ -9,7 +10,8 @@ import FrontendErrors from "../types/errors.types";
 class GarbageParser {
   private tokens: LexerTokenTypes.Token[];
   private holder: LexerTokenTypes.Token | null;
-  private root: AbstractSyntaxTreeTypes.ProgramNode
+  private root: AbstractSyntaxTreeTypes.ProgramNode;
+  expr: ExpressionTrees
   constructor () {
     this.tokens = [];
     // used to keep the state of certain tokens.
@@ -18,6 +20,7 @@ class GarbageParser {
       type: AbstractSyntaxTreeTypes.Node.PROGRAM,
       body: []
     };
+    this.expr = new ExpressionTrees();
   };
 
   public set setTokens (tokens: LexerTokenTypes.Token[]) {
@@ -82,15 +85,15 @@ class GarbageParser {
     let isConstant: boolean = false;
     // const/let foo <Type> = <TypeValue/Expression>;
     // removing first because we know it will, in fact be a let || const;
-    
+
     if (this.holder && this.holder.lexeme === "const") {
       isConstant = true;
     };
-    
+
 
     // we are gonna save the var name within the parseAssignment();
     this.holder = this.expected(LexerGrammarTypes.LangTokenIdentifier.LITERAL, `Expected Literal`);
-    
+
     // Refactor
     // type checking
 
@@ -99,8 +102,9 @@ class GarbageParser {
 
   private parseExpression (): (null | AbstractSyntaxTreeTypes.ExpressionsType) {
     // here we must build the expression tree or return the semicolon;
+    
+   let assigned = this.holder;
 
-   const assigned = this.holder;
     if (!assigned) {
       console.error("Unexpected, missing the assigned token!");
       process.exit(1);
@@ -108,27 +112,44 @@ class GarbageParser {
 
     const expression: LexerTokenTypes.Token[] = [assigned];
 
-    const specialToken = this.eat();
+    while (assigned && assigned.id !== LexerGrammarTypes.LangTokenIdentifier.SEMICOLON) {
+      assigned = this.eat();
 
-    const isOperator = LexerGrammarTypes.OperatorKeywordMap[specialToken.lexeme];
+      const isOperator = LexerGrammarTypes.OperatorKeywordMap[assigned.lexeme];
 
-    switch (true) {
-      case isOperator !== undefined:
-        expression.push(specialToken);
-      break;
+      if (isOperator) {
+        expression.push(assigned);
+        continue;
+      };
 
-      case specialToken.id === LexerGrammarTypes.LangTokenIdentifier.SEMICOLON:
-        return null
+      switch (assigned.id) {
+        case LexerGrammarTypes.LangTokenIdentifier.INT:
+        case LexerGrammarTypes.LangTokenIdentifier.FLOAT:
+        case LexerGrammarTypes.LangTokenIdentifier.STRING:
+          expression.push(assigned);
+        continue;
 
-      default: {
-        throw new FrontendErrors.ParserError({
-          message: `Expected ending semicolon ";" or expression operator/operators!`,
-          line: specialToken.line,
-          char: specialToken.char,
-          at: `${assigned.lexeme} ${specialToken.lexeme}`
-        })
+        case LexerGrammarTypes.LangTokenIdentifier.SEMICOLON:
+        break;
+
+        default: {
+          throw new FrontendErrors.ParserError({
+            message: `Expected ending semicolon ";" or expression operator/operators!`,
+            line: assigned.line,
+            char: assigned.char,
+            at: `${assigned.lexeme}`
+          });
+        };
       };
     };
+
+    this.expr.setExpression = expression;
+
+    const tree = this.expr.generate();
+  
+    if (!tree) return null;
+
+    return tree;
   };
 
   private parseString (): (string | null) {
@@ -210,6 +231,17 @@ class GarbageParser {
           },
           isConstant
         });
+    } else if (builtExpressionTree?.type === AbstractSyntaxTreeTypes.Node.EXPRESSION_UNARY) {
+      this.root.body.push({
+        type: AbstractSyntaxTreeTypes.Node.DECLARATION_VARIABLE,
+        identifier: {
+          type: AbstractSyntaxTreeTypes.Node.IDENTIFIER,
+          name: assignerName?.lexeme as string,
+          identiferType: assignerType.lexeme as AbstractSyntaxTreeTypes.IdentifierType
+        },
+        value: builtExpressionTree,
+        isConstant
+      })
     };
   };
 

@@ -1,3 +1,6 @@
+import type LexerTokenTypes from "../types/lexer.tokens";
+import LexerGrammarTypes from "../types/lexer.grammar.types";
+
 export function isNumber(char: string): boolean {
   const num = Number(char);
 
@@ -13,4 +16,13 @@ export function isNumber(char: string): boolean {
 export function isAlphabet(char: string): boolean {
   const isTrue = /^[A-Za-z]+$/.test(char);
   return isTrue;
+};
+
+
+export function isNumId (token: LexerTokenTypes.Token): boolean {
+  if (token.id === LexerGrammarTypes.LangTokenIdentifier.INT || token.id === LexerGrammarTypes.LangTokenIdentifier.FLOAT) {
+    return true;
+  };
+
+  return false;
 };

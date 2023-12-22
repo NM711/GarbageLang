@@ -10,7 +10,6 @@ function main () {
   lexer.setData = fileData;
   const tokens = lexer.getTokens();
   parser.setTokens = tokens;
-  //console.log(tokens)
   const tree = parser.parse();
 
  // temporarily output a json file so i can see the structure of the tree

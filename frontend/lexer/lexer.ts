@@ -97,7 +97,6 @@ class GarbageLexer {
         declared: LexerGrammarTypes.DeclarativeKeywordMap[this.key]
       };
 
-     // console.log(this.char)
 
       const isCharAlphabet: boolean = isAlphabet(this.char);
 
@@ -107,7 +106,6 @@ class GarbageLexer {
       };
   
       if (!isCharAlphabet && this.key.length > 0) {
-          console.log(this.key)
           if (lookups.type || lookups.declared) {
             this.pushTokenWithKeyAsLexeme(lookups.type ?? lookups.declared);
           } else {
