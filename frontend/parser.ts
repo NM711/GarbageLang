@@ -1,32 +1,36 @@
 // consider renaming to GrammarTypes instead, since its no longer lexer specific
 import LexerGrammarTypes from "../types/lexer.grammar.types";
-import ExpressionTrees from "./expressions";
 import AbstractSyntaxTreeTypes from "../types/ast.types";
-import type LexerTokenTypes from "../types/lexer.tokens";
 import FrontendErrors from "../types/errors.types";
-
+import { isNumId, isOperator } from "./utils";
+import type LexerTokenTypes from "../types/lexer.tokens";
 
 class GarbageParser {
   private tokens: LexerTokenTypes.Token[];
-  private holder: LexerTokenTypes.Token | null;
-  private root: AbstractSyntaxTreeTypes.ProgramNode;
-  expr: ExpressionTrees
+  private expression: LexerTokenTypes.Token[];
+
   constructor () {
     this.tokens = [];
-    // used to keep the state of certain tokens.
-    this.holder = null;
-    this.root = {
-      type: AbstractSyntaxTreeTypes.Node.PROGRAM,
-      body: []
-    };
-    this.expr = new ExpressionTrees();
+    this.expression = [];
   };
 
   public set setTokens (tokens: LexerTokenTypes.Token[]) {
     this.tokens = tokens;
   };
 
-  private eat (): LexerTokenTypes.Token {
+  private look() {
+    return this.tokens[0] as LexerTokenTypes.Token;
+  };
+
+  private peekExpr() {
+    return this.expression[1] as LexerTokenTypes.Token;
+  };
+
+  private lookExpr(){
+    return this.expression[0] as LexerTokenTypes.Token;
+  };
+
+  private eat(): LexerTokenTypes.Token {
 
     const token = this.tokens.shift();
 
@@ -36,11 +40,6 @@ class GarbageParser {
     };
 
     return token;
-  };
-
-  private eatAndPushToHolder(): void {
-    const consumed = this.eat();
-    this.holder = consumed;
   };
 
   private expected (id: LexerGrammarTypes.LangTokenIdentifier, errorMssg: string) {
@@ -54,200 +53,76 @@ class GarbageParser {
         at: `${consumed?.lexeme}`
       })
     };
-
-    return consumed;
   };
 
-  private createAST (): void {
-    while (this.tokens.length > 0) {
-      this.eatAndPushToHolder();
+  private parseVar () {
 
-      if (!this.holder || (this.holder && this.holder.id === LexerGrammarTypes.LangTokenIdentifier.EOF) ) {
-        break;
-      };
-      switch (this.holder.id) {
-        case LexerGrammarTypes.LangTokenIdentifier.VARIABLE:
-        case LexerGrammarTypes.LangTokenIdentifier.CONSTANT:
-          this.parseVarConst();
-        continue;
-
-        default:
-          continue;
-      };
-    };
   };
 
-  // Terminal Values = if, const, let, for, while, switch, etc.
-  // NonTerminal Values = String, Array, Int, IdentifierValues.
+  private parseMultiplicative() {
+    let left = this.eat();
 
-  private parseVarConst () {
-    let isConstant: boolean = false;
-    // const/let foo <Type> = <TypeValue/Expression>;
-    // removing first because we know it will, in fact be a let || const;
+    while (this.look().id === LexerGrammarTypes.LangTokenIdentifier.MULTIPLICATION && this.look().id === LexerGrammarTypes.LangTokenIdentifier.DIVISION)  {
+      const operator = this.eat();
+      let right = this.eat();
 
-    if (this.holder && this.holder.lexeme === "const") {
-      isConstant = true;
-    };
-
-
-    // we are gonna save the var name within the parseAssignment();
-    this.holder = this.expected(LexerGrammarTypes.LangTokenIdentifier.LITERAL, `Expected Literal`);
-
-    // Refactor
-    // type checking
-
-    this.parseAssignment(isConstant);
-  };
-
-  private parseExpression (): (null | AbstractSyntaxTreeTypes.ExpressionsType) {
-    // here we must build the expression tree or return the semicolon;
-    
-   let assigned = this.holder;
-
-    if (!assigned) {
-      console.error("Unexpected, missing the assigned token!");
-      process.exit(1);
-    };
-
-    const expression: LexerTokenTypes.Token[] = [assigned];
-
-    while (assigned && assigned.id !== LexerGrammarTypes.LangTokenIdentifier.SEMICOLON) {
-      assigned = this.eat();
-
-      const isOperator = LexerGrammarTypes.OperatorKeywordMap[assigned.lexeme];
-
-      if (isOperator) {
-        expression.push(assigned);
-        continue;
-      };
-
-      switch (assigned.id) {
-        case LexerGrammarTypes.LangTokenIdentifier.INT:
-        case LexerGrammarTypes.LangTokenIdentifier.FLOAT:
-        case LexerGrammarTypes.LangTokenIdentifier.STRING:
-          expression.push(assigned);
-        continue;
-
-        case LexerGrammarTypes.LangTokenIdentifier.SEMICOLON:
-        break;
-
-        default: {
-          throw new FrontendErrors.ParserError({
-            message: `Expected ending semicolon ";" or expression operator/operators!`,
-            line: assigned.line,
-            char: assigned.char,
-            at: `${assigned.lexeme}`
-          });
-        };
+      left = {
+        type: AbstractSyntaxTreeTypes.NodeType.EXPR_BINARY,
+        left,
+        right,
+        operator
       };
     };
 
-    this.expr.setExpression = expression;
-
-    const tree = this.expr.generate();
-  
-    if (!tree) return null;
-
-    return tree;
+    return left;
   };
 
-  private parseString (): (string | null) {
-    // use state machine
+  private parseAdditive () {
+    let left = this.parseMultiplicative();
 
-    let isStrOpened: boolean = false;
+    while (this.look().id === LexerGrammarTypes.LangTokenIdentifier.ADDITION || this.look().id === LexerGrammarTypes.LangTokenIdentifier.SUBTRACTION) {
+      const operator = this.eat();
+      let right = this.eat();
 
-    let generatedStr: string[] = [];
-
-    if (this.holder && this.holder.id === LexerGrammarTypes.LangTokenIdentifier.DOUBLE_QUOTE) {
-      isStrOpened = true;
-      this.eatAndPushToHolder();
-    };
-
-    if (this.holder && isStrOpened) {
-      while (this.holder.id !== LexerGrammarTypes.LangTokenIdentifier.DOUBLE_QUOTE) {
-        generatedStr.push(this.holder.lexeme);
-        this.eatAndPushToHolder();
+      left = {
+        type: AbstractSyntaxTreeTypes.NodeType.EXPR_BINARY,
+        left,
+        right,
+        operator
       };
 
-      return generatedStr.join(" ");
+      console.log(left);
     };
-
-    return null;
+    return left;
   };
 
-  private parseAssignment (isConstant: boolean): void {
-    const assignerName = this.holder;
-    const assignerType  = this.eat();
+  private parseExpr () {
+    return this.parseAdditive();
+  };
 
-    if (assignerType && !LexerGrammarTypes.DataTypeKeywordMap[assignerType.lexeme]) {
-      throw new FrontendErrors.ParserError({
-        message: `Unexpected type "${assignerType.lexeme}"`,
-        line: assignerType.line,
-        char: assignerType.char,
-        at: `${assignerName?.lexeme} ${assignerType.lexeme}`
-      });
-    };
+  private parse () {
+    switch (this.look().id) {
+      case LexerGrammarTypes.LangTokenIdentifier.VARIABLE:
+      case LexerGrammarTypes.LangTokenIdentifier.CONSTANT:
+      break;
 
-    this.expected(LexerGrammarTypes.LangTokenIdentifier.EQUAL, "Expected assignment!");
-
-    const assigned = this.eat();
-
-    // here we error handle basically, match types and what not. But if we see any operators after the value assignment then we know
-    // that the value will instead be an expression. So if this is the case we wil just call, parseExpression() to handle this.
-
-    const expectType = (expected: string, assignerID: LexerGrammarTypes.LangTokenIdentifier, assignedID: LexerGrammarTypes.LangTokenIdentifier) => {
-      if (assignerType.id === assignerID && assigned.id !== assignedID)  {
-        throw new FrontendErrors.ParserError({
-          message: `Type was set to "${assignerType.lexeme}" yet, no valid (${expected}) to be found!`,
-          line: assigned.line,
-          char: assigned.char,
-          at: `${assignerType.lexeme} = ${assigned.lexeme}`
-        });
+      default: {
+        return this.parseExpr()
       };
     };
-
-    expectType(`"`, LexerGrammarTypes.LangTokenIdentifier.STRING, LexerGrammarTypes.LangTokenIdentifier.DOUBLE_QUOTE);
-    expectType(`Int`, LexerGrammarTypes.LangTokenIdentifier.INT, LexerGrammarTypes.LangTokenIdentifier.INT);
-    expectType(`Float`, LexerGrammarTypes.LangTokenIdentifier.FLOAT, LexerGrammarTypes.LangTokenIdentifier.FLOAT);
-
-    this.holder = assigned;
-
-    const generatedStr = this.parseString();
-
-    const builtExpressionTree = this.parseExpression();
-
-    if (!builtExpressionTree && generatedStr) {
-        this.root.body.push({
-          type: AbstractSyntaxTreeTypes.Node.DECLARATION_VARIABLE,
-          identifier: {
-            type: AbstractSyntaxTreeTypes.Node.IDENTIFIER,
-            name: assignerName?.lexeme as string,
-            identiferType: "String"
-          },
-          value: {
-            type: AbstractSyntaxTreeTypes.Node.STRING_LITERAL,
-            value: generatedStr
-          },
-          isConstant
-        });
-    } else if (builtExpressionTree?.type === AbstractSyntaxTreeTypes.Node.EXPRESSION_UNARY) {
-      this.root.body.push({
-        type: AbstractSyntaxTreeTypes.Node.DECLARATION_VARIABLE,
-        identifier: {
-          type: AbstractSyntaxTreeTypes.Node.IDENTIFIER,
-          name: assignerName?.lexeme as string,
-          identiferType: assignerType.lexeme as AbstractSyntaxTreeTypes.IdentifierType
-        },
-        value: builtExpressionTree,
-        isConstant
-      })
-    };
   };
 
-  public parse () {
-    this.createAST();
-    console.log(this.root)
-    return this.root;
+  public generateAST(): AbstractSyntaxTreeTypes.ProgramNode {
+      const root: AbstractSyntaxTreeTypes.ProgramNode = {
+        type: AbstractSyntaxTreeTypes.NodeType.PROGRAM,
+        body: []
+      };
+
+      while (this.tokens.length > 0) {
+        root.body.push(this.parse());
+      };
+
+      return root;
   };
 };
 

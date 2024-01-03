@@ -18,11 +18,8 @@ export function isAlphabet(char: string): boolean {
   return isTrue;
 };
 
-
 export function isNumId (token: LexerTokenTypes.Token): boolean {
-  if (token.id === LexerGrammarTypes.LangTokenIdentifier.INT || token.id === LexerGrammarTypes.LangTokenIdentifier.FLOAT) {
-    return true;
-  };
-
-  return false;
+  return token.id === LexerGrammarTypes.LangTokenIdentifier.INT || token.id === LexerGrammarTypes.LangTokenIdentifier.FLOAT
 };
+
+export const isOperator = (operator: string) => LexerGrammarTypes.OperatorKeywordMap[operator];

@@ -1,5 +1,4 @@
-
-const someNum Float = 0.1 + 10 - 204;
+const someNum Float = 0.1 + 10 - 10 * 9;
 
 const anotherone Int = 5;
 

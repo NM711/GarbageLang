@@ -83,10 +83,7 @@ class GarbageLexer {
 
       this.updateLineInfo();
 
-      if (!this.char) {
-        this.pushToken("EOF", LexerGrammarTypes.LangTokenIdentifier.EOF);
-        break;
-      };
+      if (!this.char) break;
 
       this.checkIfNumber();
 
@@ -121,6 +118,7 @@ class GarbageLexer {
         continue;
       };
     };
+    this.pushToken("EOF", LexerGrammarTypes.LangTokenIdentifier.EOF);
   };
 
   public getTokens(): LexerTokenTypes.Token[] {

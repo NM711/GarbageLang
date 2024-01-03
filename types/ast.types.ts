@@ -1,19 +1,24 @@
 namespace AbstractSyntaxTreeTypes {
 
-  export enum Node {
+  export enum NodeType {
     PROGRAM = "Program",
-    IDENTIFIER = "Identifier",
-    STRING_LITERAL = "StringLiteral",
-    NUMBER_LITERAL = "NumberLiteral",
-    DECLARATION_VARIABLE = "DeclarationVariable",
-    DECLARATION_FUNCTION = "DeclarationFunction",
-    STATEMENT_FOR = "StatementFor",
-    STATEMENT_IF = "StatementIf",
-    STATEMENT_SWITCH = "StatementSwitch",
-    EXPRESSION_CALL = "ExpressionCall",
-    EXPRESSION_STATEMENT = "ExpressionStatement",
-    EXPRESSION_BINARY = "ExpressionBinary",
-    EXPRESSION_UNARY = "ExpressionUnary"
+    IDENT = "Identifier",
+    STR_LITERAL = "StringLiteral",
+    NUM_LITERAL = "NumberLiteral",
+    DECLARATION_VAR = "DeclarationVariable",
+    DECLARATION_FN = "DeclarationFunction",
+    FOR_STATEMENT = "ForStatement",
+    IF_STATEMENT = "IfStatement",
+    SWITCH_STATEMENT = "SwitchStatement",
+    EXPR_CALL = "ExpressionCall",
+    EXPR_BINARY = "ExpressionBinary",
+    EXPR_UNARY = "ExpressionUnary",
+  };
+
+  export enum PresedenceLevels {
+    LOWEST,
+    MID,
+    MAX
   };
 
   export type IdentifierType = "String" | "Null" | "Obj" | "Boolean" | "Float" | "Array" | "Int";
@@ -21,7 +26,7 @@ namespace AbstractSyntaxTreeTypes {
   export type ExpressionOperator = "===" | "|" | "&" | ">" | "<" | ">=" | "<=" | "+" | "-" | "/" | "*";
 
   interface DeclarationIdentifer {
-    type: Node.IDENTIFIER
+    type: NodeType
     name: string
   };
 
@@ -34,69 +39,63 @@ namespace AbstractSyntaxTreeTypes {
     value: Y
   };
 
-  type DeclarationValueString = DeclarationValue<Node.STRING_LITERAL, string>;
+  type DeclarationValueString = DeclarationValue<NodeType.STR_LITERAL, string>;
 
-  type DeclarationValueNumber = DeclarationValue<Node.NUMBER_LITERAL, number>;
+  type DeclarationValueNumber = DeclarationValue<NodeType.NUM_LITERAL, number>;
 
   export type DeclarationLiteralValue = DeclarationValueNumber | DeclarationValueString | null;
 
- export type ExpressionBaseType<T, L, R> = {
+  export type ExpressionBaseType<T, L, R> = {
     type: T,
     left: L,
     operator: ExpressionOperator | null,
     right: R
   };
 
- export type UnaryExpressionType = ExpressionBaseType<Node.EXPRESSION_UNARY, DeclarationLiteralValue, DeclarationLiteralValue>;
-
- export type BinaryExpressionType = ExpressionBaseType<Node.EXPRESSION_BINARY, UnaryExpressionType, UnaryExpressionType>;
-
- export type ExpressionsType = UnaryExpressionType | BinaryExpressionType;
-
+  export type ExpressionType = ExpressionBaseType<NodeType.EXPR_UNARY, DeclarationLiteralValue, DeclarationLiteralValue>;
+  export type Expr = ExpressionBaseType<NodeType.EXPR_BINARY,  ExpressionType | DeclarationLiteralValue | null, ExpressionType | DeclarationLiteralValue | null>
+  
   // Nodes
 
   export interface ProgramNode {
-    type: Node.PROGRAM
+    type: NodeType.PROGRAM
     body: TreeNodeType[]
   };
 
   export interface VariableDeclarationNode {
-    type: Node.DECLARATION_VARIABLE,
+    type: NodeType.DECLARATION_VAR,
     isConstant: boolean,
     identifier: DeclarationIdentiferWithType
-    value: DeclarationLiteralValue | ExpressionsType
+    value: DeclarationLiteralValue | Expr
   };
 
   export interface FunctionDeclarationNode {
-    type: Node.DECLARATION_FUNCTION
+    type: NodeType.DECLARATION_FN
     identifier: DeclarationIdentifer
     params: DeclarationIdentiferWithType[]
     body: TreeNodeType[]
   };
 
-
   interface ForLoopExpressions {
     initializer: VariableDeclarationNode
-    condition: ExpressionsType
-    iterator: UnaryExpressionType
+    condition: Expr
+    iterator: Expr
   };
 
   export interface ForStatementNode {
-    type: Node.STATEMENT_FOR,
+    type: NodeType.FOR_STATEMENT,
     initializer: VariableDeclarationNode,
     info: ForLoopExpressions
     body: TreeNodeType[]
   };
 
   export interface IFStatementNode {
-    type: Node.STATEMENT_IF,
-    test: ExpressionsType
+    type: NodeType.IF_STATEMENT,
+    test: Expr
   };
 
   type TreeNodeType = IFStatementNode | ForStatementNode | FunctionDeclarationNode | VariableDeclarationNode | ProgramNode;
 
-  interface ITreeNode {
-  }
 };
 
 export default AbstractSyntaxTreeTypes;
