@@ -24,7 +24,9 @@ async function repl () {
       const tokens = lexer.getTokens();
       parser.setTokens = tokens;
       const tree = parser.generateAST();
-
+      fs.writeFile("tree.json", JSON.stringify(tree, null, 2), "utf-8", (err) => {
+        if (err) console.error(err)
+      });
       recall();
     });
   };
@@ -32,20 +34,4 @@ async function repl () {
   recall()
 };
 
-function main () {
-  
-  /*const fileData = readGarbageFiles("./hello.gb")
-  const parser = new GarbageParser();
-  const lexer = new GarbageLexer();
-  lexer.setData = fileData;
-  const tokens = lexer.getTokens();
-  console.log(tokens);
-  parser.setTokens = tokens;
-  const tree = parser.parse();
-
- // temporarily output a json file so i can see the structure of the tree
-  fs.writeFile("tree.json", JSON.stringify(tree, null, 2), "utf-8", (err) => {
-    if (err) console.error(err)
-  })*/
-};
 repl()

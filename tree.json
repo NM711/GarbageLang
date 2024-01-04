@@ -2,30 +2,40 @@
   "type": "Program",
   "body": [
     {
-      "type": "DeclarationVariable",
-      "identifier": {
-        "type": "Identifier",
-        "name": "cons",
-        "identiferType": "String"
+      "type": "ExpressionBinary",
+      "left": {
+        "type": "ExpressionBinary",
+        "left": {
+          "type": "NumberLiteral",
+          "value": 200
+        },
+        "right": {
+          "type": "NumberLiteral",
+          "value": 300
+        },
+        "operator": "+"
       },
-      "value": {
-        "type": "StringLiteral",
-        "value": "hello pos"
+      "right": {
+        "type": "ExpressionBinary",
+        "left": {
+          "type": "ExpressionBinary",
+          "left": {
+            "type": "NumberLiteral",
+            "value": 25
+          },
+          "right": {
+            "type": "NumberLiteral",
+            "value": 3
+          },
+          "operator": "*"
+        },
+        "right": {
+          "type": "NumberLiteral",
+          "value": 2
+        },
+        "operator": "/"
       },
-      "isConstant": false
-    },
-    {
-      "type": "DeclarationVariable",
-      "identifier": {
-        "type": "Identifier",
-        "name": "heyyo",
-        "identiferType": "String"
-      },
-      "value": {
-        "type": "StringLiteral",
-        "value": "hi world"
-      },
-      "isConstant": true
+      "operator": "-"
     }
   ]
 }
