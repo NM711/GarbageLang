@@ -1,10 +1,9 @@
-import LexerGrammarTypes from "../../types/lexer.grammar.types";
-import { isNumber, isAlphabet } from "../utils";
-import type { LineInfo } from "../../types/lexer.types";
-import type LexerTokenTypes from "../../types/lexer.tokens";
+import LexerGrammarTypes from "../types/lexer/lexer.grammar.types";
+import { isNumber, isAlphabet } from "./utils";
+import type { LineInfo, Token } from "../types/lexer/lexer.types";
 
 class GarbageLexer {
-  private tokens: LexerTokenTypes.Token[];
+  private tokens: Token[];
   private key: string;
   private data: string[];
   private char: string | undefined;
@@ -15,18 +14,22 @@ class GarbageLexer {
     this.data = [];
     this.key = "";
     this.char = "";
-    this.lineInfo = {
-      lineNum: 1,
-      charNum: 0
-    };
+    this.lineInfo = this.resetLineInfo();
   };
 
-  protected updateLineInfo (): void {
+  protected updateLineInfo(): void {
     ++this.lineInfo.charNum;
 
     if (this.char === "\n") {
         this.lineInfo.charNum = 0;
       ++this.lineInfo.lineNum;
+    };
+  };
+
+  private resetLineInfo() {
+    return {
+      lineNum: 1,
+      charNum: 0
     };
   };
 
@@ -51,7 +54,7 @@ class GarbageLexer {
     });
   };
 
-  private pushTokenWithKeyAsLexeme (id: LexerGrammarTypes.LangTokenIdentifier) {
+  private pushTokenWithKeyAsLexeme(id: LexerGrammarTypes.LangTokenIdentifier) {
     this.pushToken(this.key, id);
     this.cleanKeyword();
   };
@@ -78,9 +81,7 @@ class GarbageLexer {
   private tokenize(): void {
 
     while (this.data.length > 0) {
-
       this.char = this.eat();
-
       this.updateLineInfo();
 
       if (!this.char) break;
@@ -93,7 +94,6 @@ class GarbageLexer {
         type: LexerGrammarTypes.DataTypeKeywordMap[this.key],
         declared: LexerGrammarTypes.DeclarativeKeywordMap[this.key]
       };
-
 
       const isCharAlphabet: boolean = isAlphabet(this.char);
 
@@ -110,20 +110,26 @@ class GarbageLexer {
           };
       };
 
-      if (lookups.special) {
-        this.pushToken(this.char, lookups.special);
-        continue;
-      } else if (lookups.operator) {
-        this.pushToken(this.char, lookups.operator);
+      if (lookups.special || lookups.operator) {
+        this.pushToken(this.char, lookups.special ?? lookups.operator);
         continue;
       };
     };
     this.pushToken("EOF", LexerGrammarTypes.LangTokenIdentifier.EOF);
   };
 
-  public getTokens(): LexerTokenTypes.Token[] {
+  public getTokens(): Token[] {
     this.tokenize();
-    return this.tokens;
+    const tokens = this.tokens;
+    this.clean();
+    return tokens;
+  };
+
+  private clean() {
+    this.tokens = [];
+    this.data = [];
+    this.lineInfo = this.resetLineInfo();
+    this.cleanKeyword();
   };
 };
 

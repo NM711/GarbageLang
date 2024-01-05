@@ -1,25 +1,31 @@
-import LexerGrammarTypes from "../types/lexer.grammar.types";
+import LexerGrammarTypes from "../types/lexer/lexer.grammar.types";
 import AbstractSyntaxTreeTypes from "../types/ast.types";
-import FrontendErrors from "../types/errors.types";
-import type LexerTokenTypes from "../types/lexer.tokens";
-import {isNumId, isNumber, isOperator} from "./utils";
+import GarbageErrors from "../types/errors.types";
+import type { Token } from "../types/lexer/lexer.types";
+
+interface ExpectedErrorParams {
+  id: LexerGrammarTypes.LangTokenIdentifier
+  token: Token
+  mssg: string
+  at?: string
+};
 
 class GarbageParser {
-  private tokens: LexerTokenTypes.Token[];
+  private tokens: Token[];
 
   constructor () {
     this.tokens = [];
   };
 
-  public set setTokens (tokens: LexerTokenTypes.Token[]) {
+  public set setTokens (tokens: Token[]) {
     this.tokens = tokens;
   };
 
   private look() {
-    return this.tokens[0] as LexerTokenTypes.Token;
+    return this.tokens[0] as Token;
   };
 
-  private eat(): LexerTokenTypes.Token {
+  private eat(): Token {
 
     const token = this.tokens.shift();
 
@@ -27,18 +33,47 @@ class GarbageParser {
       console.error(`Expected Token, but instead got ${undefined}`);
       process.exit(1);
     };
-    console.log(this.tokens)
     return token;
   };
 
-  private expected (id: LexerGrammarTypes.LangTokenIdentifier, errorMssg: string) {
-    if (!this.look() || this.look().id !== id) {
-      throw new FrontendErrors.ParserError({
-        message: `Expected token id of ${id}, instead got token id of ${this.look().id} => ${errorMssg}`,
-        line: this.look().line || 0,
-        char: this.look().char || 0,
-        at: `${this.look().lexeme}`
-      })
+  private expected ({ id, token, mssg, at }: ExpectedErrorParams) {
+    throw new GarbageErrors.FrontendErrors.ParserError({
+      message: `Expected token id of ${id}, instead got token id of ${token.id} => ${mssg}`,
+      line: token.line,
+      char: token.char,
+      at: at ?? token.lexeme
+    })
+  };
+
+  private generateString(): AbstractSyntaxTreeTypes.StringLiteral {
+    this.eat();
+
+    let value: string = "";
+
+    while (true) {
+      const current = this.eat();
+
+      value += current.lexeme;
+
+      const next = this.eat();
+      
+      if (next.id === LexerGrammarTypes.LangTokenIdentifier.DOUBLE_QUOTE) break;
+
+      if (next.id === LexerGrammarTypes.LangTokenIdentifier.LINE_BREAK || next.id === LexerGrammarTypes.LangTokenIdentifier.EOF) {
+        throw this.expected({
+          id: LexerGrammarTypes.LangTokenIdentifier.DOUBLE_QUOTE,
+          token: next,
+          mssg: "String was initialized but is missing closing double quote!",
+          at: `${current.lexeme} ${next.lexeme}`
+        });
+      };
+
+      value += next.lexeme;
+    };
+
+    return {
+      type: AbstractSyntaxTreeTypes.NodeType.STR_LITERAL,
+      value
     };
   };
 
@@ -54,10 +89,8 @@ class GarbageParser {
     return [LexerGrammarTypes.LangTokenIdentifier.ADDITION, LexerGrammarTypes.LangTokenIdentifier.SUBTRACTION].includes(this.look().id);
   };
 
-  // 300 + 200 * 2
-
-  private parseMultiplicative () {
-    let left: AbstractSyntaxTreeTypes.DeclarationLiteralValue | AbstractSyntaxTreeTypes.Expr = this.parsePrimary();
+  private parseMultiplicative (): AbstractSyntaxTreeTypes.Expr | AbstractSyntaxTreeTypes.Literal {
+    let left: AbstractSyntaxTreeTypes.Literal | AbstractSyntaxTreeTypes.Expr = this.parsePrimary();
 
     while (this.look() && this.isMultiplicative()) {
       const operator = this.eat();
@@ -65,7 +98,7 @@ class GarbageParser {
 
       left = {
         type: AbstractSyntaxTreeTypes.NodeType.EXPR_BINARY,
-        left: left as AbstractSyntaxTreeTypes.DeclarationLiteralValue,
+        left: left as AbstractSyntaxTreeTypes.Literal,
         right,
         operator: operator.lexeme as AbstractSyntaxTreeTypes.ExpressionOperator
       };
@@ -76,23 +109,23 @@ class GarbageParser {
 
   private parseAdditive () {
     let left = this.parseMultiplicative();
+
     while (this.look() && this.isAdditive()) {
       const operator = this.eat();
       const right = this.parseMultiplicative();
 
       left = {
         type: AbstractSyntaxTreeTypes.NodeType.EXPR_BINARY,
-        left: left as AbstractSyntaxTreeTypes.DeclarationLiteralValue,
+        left: left as AbstractSyntaxTreeTypes.Literal,
         right,
         operator: operator.lexeme as AbstractSyntaxTreeTypes.ExpressionOperator
-      };
+      } as AbstractSyntaxTreeTypes.BinaryExpr;
     };
 
     return left;
   };
 
-  private parsePrimary (): AbstractSyntaxTreeTypes.DeclarationLiteralValue {
-
+  private parsePrimary (): AbstractSyntaxTreeTypes.Literal {
     switch (this.look().id) {
       case LexerGrammarTypes.LangTokenIdentifier.INT:
       case LexerGrammarTypes.LangTokenIdentifier.FLOAT:
@@ -101,14 +134,13 @@ class GarbageParser {
           value: parseInt(this.eat().lexeme)
         };
 
-      case LexerGrammarTypes.LangTokenIdentifier.STRING:
-        return {
-          type: AbstractSyntaxTreeTypes.NodeType.STR_LITERAL,
-          value: this.eat().lexeme
-        };
-      default:
 
-        throw new FrontendErrors.ParserError({
+      // generate string
+      case LexerGrammarTypes.LangTokenIdentifier.DOUBLE_QUOTE:
+        return this.generateString(); 
+      
+      default:
+        throw new GarbageErrors.FrontendErrors.ParserError({
           message: "Unexpected token found while parsing the expression!",
           at: this.look().lexeme,
           line: this.look().line,
@@ -121,11 +153,11 @@ class GarbageParser {
     return this.parseAdditive();
   };
 
-  private parse () {
+  private parse (): AbstractSyntaxTreeTypes.TreeNodeType {
     switch (this.look().id) {
-      case LexerGrammarTypes.LangTokenIdentifier.VARIABLE:
-      case LexerGrammarTypes.LangTokenIdentifier.CONSTANT:
-      break;
+      // case LexerGrammarTypes.LangTokenIdentifier.VARIABLE:
+      // case LexerGrammarTypes.LangTokenIdentifier.CONSTANT:
+      // break;
 
       default: {
         return this.parseExpr()
@@ -143,9 +175,7 @@ class GarbageParser {
         root.body.push(this.parse());
       };
 
-      //console.log(JSON.stringify(root.body, null, 2))
-      console.log(root.body)
-    
+      console.log(JSON.stringify(root.body, null, 2))
       return root;
   };
 };

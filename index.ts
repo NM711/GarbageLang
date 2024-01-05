@@ -1,37 +1,56 @@
-import GarbageLexer from "./frontend/lexer/lexer";
-import GarbageParser from "./frontend/parser";
-import readGarbageFiles from "./frontend/reader";
-import fs from "node:fs";
 import readline from "node:readline";
+import fs from "node:fs";
+import GarbageLexer from "./frontend/lexer";
+import GarbageParser from "./frontend/parser";
+import GarbageTreeWalker from "./runtime/walker";
+import type { ReadLine } from "node:readline";
 
-const rl = readline.createInterface({
-  input: process.stdin,
-  output: process.stdout
-});
+class GarbageREPL {
+  private rl: ReadLine
+  private lexer: GarbageLexer;
+  private parser: GarbageParser;
+  private walker: GarbageTreeWalker;
 
-async function repl () {
-  console.log("GarbageLang REPL v1.0")
-  const lexer = new GarbageLexer()
-  const parser = new GarbageParser()
+  constructor () {
+    this.rl = readline.createInterface({
+      input: process.stdin,
+      output: process.stdout
+    });
+    this.lexer = new GarbageLexer();
+    this.parser = new GarbageParser();
+    this.walker = new GarbageTreeWalker();
+  };
 
-  const recall = () => {
-    rl.question("> ", (userInput) => {
+
+  private recall () {
+    this.rl.question("> ", (userInput) => {
       if (userInput === "exit") {
-        process.exit(0);
+        this.rl.close();
       };
 
-      lexer.setData = userInput || "";
-      const tokens = lexer.getTokens();
-      parser.setTokens = tokens;
-      const tree = parser.generateAST();
+      this.lexer.setData = userInput || "";
+      const tokens = this.lexer.getTokens();
+      this.parser.setTokens = tokens;
+      const tree = this.parser.generateAST();
+
       fs.writeFile("tree.json", JSON.stringify(tree, null, 2), "utf-8", (err) => {
         if (err) console.error(err)
       });
-      recall();
+
+      const res = this.walker.evaluateProgram(tree);
+      console.log(res)
+      return this.recall();
     });
   };
 
-  recall()
+
+  public run () {
+    console.log("GarbageLang REPL v1.0");
+    return this.recall();
+  };
 };
 
-repl()
+
+const repl = new GarbageREPL();
+
+repl.run();

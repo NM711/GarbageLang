@@ -1,5 +1,5 @@
-import type LexerTokenTypes from "../types/lexer.tokens";
-import LexerGrammarTypes from "../types/lexer.grammar.types";
+import LexerGrammarTypes from "../types/lexer/lexer.grammar.types";
+import type { Token } from "../types/lexer/lexer.types";
 
 export function isNumber(char: string): boolean {
   const num = Number(char);
@@ -18,7 +18,7 @@ export function isAlphabet(char: string): boolean {
   return isTrue;
 };
 
-export function isNumId (token: LexerTokenTypes.Token): boolean {
+export function isNumId (token: Token): boolean {
   return token.id === LexerGrammarTypes.LangTokenIdentifier.INT || token.id === LexerGrammarTypes.LangTokenIdentifier.FLOAT
 };
 

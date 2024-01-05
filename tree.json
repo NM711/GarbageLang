@@ -4,38 +4,14 @@
     {
       "type": "ExpressionBinary",
       "left": {
-        "type": "ExpressionBinary",
-        "left": {
-          "type": "NumberLiteral",
-          "value": 200
-        },
-        "right": {
-          "type": "NumberLiteral",
-          "value": 300
-        },
-        "operator": "+"
+        "type": "StringLiteral",
+        "value": "hello"
       },
       "right": {
-        "type": "ExpressionBinary",
-        "left": {
-          "type": "ExpressionBinary",
-          "left": {
-            "type": "NumberLiteral",
-            "value": 25
-          },
-          "right": {
-            "type": "NumberLiteral",
-            "value": 3
-          },
-          "operator": "*"
-        },
-        "right": {
-          "type": "NumberLiteral",
-          "value": 2
-        },
-        "operator": "/"
+        "type": "StringLiteral",
+        "value": "123"
       },
-      "operator": "-"
+      "operator": "+"
     }
   ]
 }

@@ -5,6 +5,7 @@ namespace AbstractSyntaxTreeTypes {
     IDENT = "Identifier",
     STR_LITERAL = "StringLiteral",
     NUM_LITERAL = "NumberLiteral",
+    NULL_LITERAL = "NullLiteral",
     DECLARATION_VAR = "DeclarationVariable",
     DECLARATION_FN = "DeclarationFunction",
     FOR_STATEMENT = "ForStatement",
@@ -12,13 +13,7 @@ namespace AbstractSyntaxTreeTypes {
     SWITCH_STATEMENT = "SwitchStatement",
     EXPR_CALL = "ExpressionCall",
     EXPR_BINARY = "ExpressionBinary",
-    EXPR_UNARY = "ExpressionUnary",
-  };
-
-  export enum PresedenceLevels {
-    LOWEST,
-    MID,
-    MAX
+    EXPR_UNARY = "ExpressionUnary"
   };
 
   export type IdentifierType = "String" | "Null" | "Obj" | "Boolean" | "Float" | "Array" | "Int";
@@ -34,26 +29,29 @@ namespace AbstractSyntaxTreeTypes {
     identiferType: IdentifierType
   };
 
-  type DeclarationValue<X = void, Y = void> = {
+  type LiteralValue<X = void, Y = void> = {
     type: X,
     value: Y
   };
 
-  type DeclarationValueString = DeclarationValue<NodeType.STR_LITERAL, string>;
+  export type StringLiteral = LiteralValue<NodeType.STR_LITERAL, string>;
 
-  type DeclarationValueNumber = DeclarationValue<NodeType.NUM_LITERAL, number>;
+  export type NumberLiteral = LiteralValue<NodeType.NUM_LITERAL, number>;
 
-  export type DeclarationLiteralValue = DeclarationValueNumber | DeclarationValueString | null;
+  export type NullLiteral = LiteralValue<NodeType.NULL_LITERAL, null>;
+
+  export type Literal = StringLiteral | NumberLiteral | NullLiteral;
 
   export type ExpressionBaseType<T, L, R> = {
     type: T,
     left: L,
-    operator: ExpressionOperator | null,
+    operator: ExpressionOperator,
     right: R
   };
 
-  export type ExpressionType = ExpressionBaseType<NodeType.EXPR_UNARY, DeclarationLiteralValue, DeclarationLiteralValue>;
-  export type Expr = ExpressionBaseType<NodeType.EXPR_BINARY,  ExpressionType | DeclarationLiteralValue | null, ExpressionType | DeclarationLiteralValue | null>
+  export type UnaryExpr = ExpressionBaseType<NodeType.EXPR_UNARY, Literal, Literal>;
+  export type BinaryExpr = ExpressionBaseType<NodeType.EXPR_BINARY, UnaryExpr | Literal, UnaryExpr | Literal>
+  export type Expr = UnaryExpr | BinaryExpr
   
   // Nodes
 
@@ -66,7 +64,7 @@ namespace AbstractSyntaxTreeTypes {
     type: NodeType.DECLARATION_VAR,
     isConstant: boolean,
     identifier: DeclarationIdentiferWithType
-    value: DeclarationLiteralValue | Expr
+    value: Literal | Expr
   };
 
   export interface FunctionDeclarationNode {
@@ -94,7 +92,14 @@ namespace AbstractSyntaxTreeTypes {
     test: Expr
   };
 
-  type TreeNodeType = IFStatementNode | ForStatementNode | FunctionDeclarationNode | VariableDeclarationNode | ProgramNode;
+  export type TreeNodeType =
+   | Literal 
+   | Expr 
+   | IFStatementNode
+   | ForStatementNode 
+   | FunctionDeclarationNode 
+   | VariableDeclarationNode 
+   | ProgramNode;
 
 };
 

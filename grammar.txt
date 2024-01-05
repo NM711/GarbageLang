@@ -1,0 +1,41 @@
+<VAR> = const/let
+<IDENT> = identifier
+<TYPE> = String | Int | Float | Null | NaN
+
+--- Var Declaration
+
+<VAR> <IDENT> <TYPE>
+
+-- Conditionals
+
+<IF> = if
+<EXPR> = <Binary> | <Unary>
+<OPERAND> = + | - | * | / | & | (||) | && | === | > | < | <= | >= | =
+<LITERAL> = <TYPE>
+
+<Unary> = {
+  left: <Literal>,
+  right: <Literal>,
+  operator: <OPERAND>
+}
+
+<Binary> = {
+  left: <Literal | Unary>,
+  right: <Literal | Unary>,
+  operator: <OPERAND>
+}
+
+<BLOCK> = <ANYTHING>
+
+<IF> ( <EXPR> ) <BLOCK>
+
+--- Loops
+
+<FOR> = for
+
+<INIT> = <VAR> <TYPE::Int>
+
+<INC> = <INIT>(++) -> + 1
+<DEC> = <INIT>(--) -> - 1
+
+<FOR> ( <INIT>; <EXPR>; <INC/DEC> ) <BLOCK>
