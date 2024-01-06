@@ -1,8 +1,13 @@
 import AbstractSyntaxTreeTypes from "../types/ast.types";
+import GarbageEnvironment from "./environment";
 import type RuntimeTypes from "../types/runtime.types";
 
 class GarbageTreeWalker {
-  constructor () {};
+  private environment: GarbageEnvironment;
+
+  constructor () {
+    this.environment = new GarbageEnvironment();
+  };
 
   public evaluateProgram (program: AbstractSyntaxTreeTypes.ProgramNode): RuntimeTypes.RuntimeValue {
     let lastEvaled: RuntimeTypes.RuntimeValue = {
@@ -49,7 +54,7 @@ class GarbageTreeWalker {
       };
 
       return this.returnNum(result);
-    } else if (lhs.type === "string" && rhs.type === "string") {
+    } else if (lhs.type === "string" && rhs.type === "string" && expr.operator === "+") {
       result = lhs.value + rhs.value;
       return {
         type: "string",
@@ -61,25 +66,59 @@ class GarbageTreeWalker {
     };
   };
 
+  private defaultNum (value: number = 0): RuntimeTypes.NumberValue {
+    return {
+      type: "number",
+      value
+    };
+  };
+
+  private defaultStr(value: string = ""): RuntimeTypes.StringValue {
+    return {
+      type: "string",
+      value
+    };
+  };
+
+  private defaultNull(): RuntimeTypes.NullValue {
+    return {
+      type: "null",
+      value: null
+    };
+  };
+
+  private evalVar(node: AbstractSyntaxTreeTypes.VariableDeclarationNode) {
+    /**
+    * When a variable is declared without assignment, depending on the type it will default to a specific value of that type.
+    */
+
+    if (!node.value) {
+      switch (node.identifier.identiferType) {
+        case "Int":
+        case "Float":
+          return this.environment.declare(node.identifier.name, node.isConstant, this.defaultNum())
+        case "String":
+          return this.environment.declare(node.identifier.name, node.isConstant, this.defaultStr());
+      };
+    } else {
+      
+    };
+  };
+
   private evaluate (node: AbstractSyntaxTreeTypes.TreeNodeType): RuntimeTypes.RuntimeValue {
     switch (node.type) {
+      case AbstractSyntaxTreeTypes.NodeType.DECLARATION_VAR:
+        return this.evalVar(node);
+
       case AbstractSyntaxTreeTypes.NodeType.NUM_LITERAL:
-        return {
-          type: "number",
-          value: node.value
-        };
+        return this.defaultNum(node.value);
 
       case AbstractSyntaxTreeTypes.NodeType.NULL_LITERAL:
-        return {
-          type: "null",
-          value: node.value
-        };
+        return this.defaultNull(); 
       
       case AbstractSyntaxTreeTypes.NodeType.STR_LITERAL:
-        return {
-          type: "string",
-          value: node.value
-        };
+        return this.defaultStr(node.value);
+       
       case AbstractSyntaxTreeTypes.NodeType.EXPR_BINARY:
         return this.evalBinaryExpr(node);
       

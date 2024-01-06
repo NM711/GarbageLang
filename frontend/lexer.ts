@@ -13,14 +13,17 @@ class GarbageLexer {
     this.tokens = [];
     this.data = [];
     this.key = "";
-    this.char = "";
     this.lineInfo = this.resetLineInfo();
+  };
+
+  private look() {
+    return this.data[0];
   };
 
   protected updateLineInfo(): void {
     ++this.lineInfo.charNum;
 
-    if (this.char === "\n") {
+    if (this.look() === "\n") {
         this.lineInfo.charNum = 0;
       ++this.lineInfo.lineNum;
     };
@@ -41,10 +44,6 @@ class GarbageLexer {
     return this.data.shift();
   };
 
-  private cleanKeyword(): void {
-    this.key = "";
-  };
-
   private pushToken(lexeme: string, id: LexerGrammarTypes.LangTokenIdentifier, charNum: number = this.lineInfo.charNum) {
     this.tokens.push({
       id,
@@ -56,15 +55,15 @@ class GarbageLexer {
 
   private pushTokenWithKeyAsLexeme(id: LexerGrammarTypes.LangTokenIdentifier) {
     this.pushToken(this.key, id);
-    this.cleanKeyword();
+    this.key = "";
   };
 
   private checkIfNumber(): void {
 
-    while (isNumber(this.char as string)) {
-      if (!this.char) break;
-      this.key += this.char;
-      this.char = this.eat();
+    while (isNumber(this.look())) {
+      if (!this.look()) break;
+      this.key += this.look();
+      this.eat();
     };
 
     const isKeyNum: boolean = isNumber(this.key);
@@ -81,28 +80,26 @@ class GarbageLexer {
   private tokenize(): void {
 
     while (this.data.length > 0) {
-      this.char = this.eat();
       this.updateLineInfo();
 
-      if (!this.char) break;
+      if (!this.look()) break;
 
       this.checkIfNumber();
 
       const lookups = {
-        special: LexerGrammarTypes.SpecialCharKeywordMap[this.char],
-        operator: LexerGrammarTypes.OperatorKeywordMap[this.char],
+        special: LexerGrammarTypes.SpecialCharKeywordMap[this.look()],
+        operator: LexerGrammarTypes.OperatorKeywordMap[this.look()],
         type: LexerGrammarTypes.DataTypeKeywordMap[this.key],
         declared: LexerGrammarTypes.DeclarativeKeywordMap[this.key]
       };
 
-      const isCharAlphabet: boolean = isAlphabet(this.char);
+      const isCharAlphabet: boolean = isAlphabet(this.look());
 
       if (isCharAlphabet) {
-        this.key += this.char;
-        continue;
+        this.key += this.look();
       };
-  
-      if (!isCharAlphabet && this.key.length > 0) {
+
+      if (!isCharAlphabet || this.data.length === 1 && this.key.length > 0) {
           if (lookups.type || lookups.declared) {
             this.pushTokenWithKeyAsLexeme(lookups.type ?? lookups.declared);
           } else {
@@ -111,9 +108,10 @@ class GarbageLexer {
       };
 
       if (lookups.special || lookups.operator) {
-        this.pushToken(this.char, lookups.special ?? lookups.operator);
-        continue;
+        this.pushToken(this.look(), lookups.special ?? lookups.operator);
       };
+
+      this.eat();
     };
     this.pushToken("EOF", LexerGrammarTypes.LangTokenIdentifier.EOF);
   };
@@ -129,7 +127,7 @@ class GarbageLexer {
     this.tokens = [];
     this.data = [];
     this.lineInfo = this.resetLineInfo();
-    this.cleanKeyword();
+    this.key = "";
   };
 };
 

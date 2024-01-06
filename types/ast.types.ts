@@ -12,6 +12,7 @@ namespace AbstractSyntaxTreeTypes {
     IF_STATEMENT = "IfStatement",
     SWITCH_STATEMENT = "SwitchStatement",
     EXPR_CALL = "ExpressionCall",
+    EXPR_ASSIGN = "ExpressionAssignment",
     EXPR_BINARY = "ExpressionBinary",
     EXPR_UNARY = "ExpressionUnary"
   };
@@ -60,11 +61,16 @@ namespace AbstractSyntaxTreeTypes {
     body: TreeNodeType[]
   };
 
+  export interface AssignmentExprNode {
+    type: NodeType.EXPR_ASSIGN,
+    value: Expr | Literal
+  };
+
   export interface VariableDeclarationNode {
     type: NodeType.DECLARATION_VAR,
     isConstant: boolean,
     identifier: DeclarationIdentiferWithType
-    value: Literal | Expr
+    value?: Literal | Expr
   };
 
   export interface FunctionDeclarationNode {

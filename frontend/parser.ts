@@ -18,6 +18,7 @@ class GarbageParser {
   };
 
   public set setTokens (tokens: Token[]) {
+    console.log(tokens)
     this.tokens = tokens;
   };
 
@@ -70,23 +71,80 @@ class GarbageParser {
 
       value += next.lexeme;
     };
-
+    console.log(value)
     return {
       type: AbstractSyntaxTreeTypes.NodeType.STR_LITERAL,
       value
     };
   };
 
-  private parseVar () {
+  // Var Declaration
+  // <VAR> <IDENT> <TYPE>
+  // ||
+  // <VAR> <IDENT> <TYPE> = <LITERAL> | <EXPR>;
 
+  private parseVar (): AbstractSyntaxTreeTypes.VariableDeclarationNode {
+    let isConstant: boolean = false;
+
+    if (this.look().id === LexerGrammarTypes.LangTokenIdentifier.CONSTANT) {
+      isConstant = true;
+    };
+
+    this.eat();
+
+    if (this.look().id !== LexerGrammarTypes.LangTokenIdentifier.LITERAL) {
+      throw this.expected({
+        id: LexerGrammarTypes.LangTokenIdentifier.LITERAL,
+        token: this.look(),
+        mssg: `Expected literal value to serve as the identifier for the initialized variable`
+      })
+    };
+
+    const ident = this.eat();
+
+    const isType = LexerGrammarTypes.DataTypeKeywordMap[this.look().lexeme];
+
+    if (!isType) {
+      throw new GarbageErrors.FrontendErrors.ParserError({
+        message: "Expected a valid type after variable identifier!",
+        char: this.look().char,
+        line: this.look().line,
+        at: this.look().lexeme
+      })
+    };
+
+    const type = this.eat();
+
+    if (this.look().id === LexerGrammarTypes.LangTokenIdentifier.SEMICOLON) {
+      this.eat();
+      return {
+       type: AbstractSyntaxTreeTypes.NodeType.DECLARATION_VAR,
+       isConstant,
+       identifier: {
+         type: AbstractSyntaxTreeTypes.NodeType.IDENT,
+         name: ident.lexeme,
+         identiferType: type.lexeme as AbstractSyntaxTreeTypes.IdentifierType
+       }
+      };
+    } else this.parsePrimary();
   };
 
-  private isMultiplicative (): boolean {
+  private isMultiplicative(): boolean {
     return [LexerGrammarTypes.LangTokenIdentifier.MULTIPLICATION, LexerGrammarTypes.LangTokenIdentifier.DIVISION].includes(this.look().id);
   };
 
-  private isAdditive (): boolean {
+  private isAdditive(): boolean {
     return [LexerGrammarTypes.LangTokenIdentifier.ADDITION, LexerGrammarTypes.LangTokenIdentifier.SUBTRACTION].includes(this.look().id);
+  };
+
+  private parseAssignment(): AbstractSyntaxTreeTypes.AssignmentExprNode | undefined{
+    if (this.look().id === LexerGrammarTypes.LangTokenIdentifier.EQUAL) {
+      this.eat();
+
+      const assignmentValue = this.parseExpr();
+
+      return { type: AbstractSyntaxTreeTypes.NodeType.EXPR_ASSIGN,  value: assignmentValue };
+    };
   };
 
   private parseMultiplicative (): AbstractSyntaxTreeTypes.Expr | AbstractSyntaxTreeTypes.Literal {
@@ -155,9 +213,9 @@ class GarbageParser {
 
   private parse (): AbstractSyntaxTreeTypes.TreeNodeType {
     switch (this.look().id) {
-      // case LexerGrammarTypes.LangTokenIdentifier.VARIABLE:
-      // case LexerGrammarTypes.LangTokenIdentifier.CONSTANT:
-      // break;
+       case LexerGrammarTypes.LangTokenIdentifier.VARIABLE:
+       case LexerGrammarTypes.LangTokenIdentifier.CONSTANT:
+       return this.parseVar();
 
       default: {
         return this.parseExpr()
@@ -174,8 +232,7 @@ class GarbageParser {
       while (this.look().id !== LexerGrammarTypes.LangTokenIdentifier.EOF) {
         root.body.push(this.parse());
       };
-
-      console.log(JSON.stringify(root.body, null, 2))
+      console.log(root.body)
       return root;
   };
 };

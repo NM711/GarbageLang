@@ -30,7 +30,7 @@ namespace LexerGrammarTypes {
     LEFT_CURLY_BRACE,
     DOUBLE_QUOTE,
     LINE_BREAK,
-    
+    WHITESPACE,
     // Literals
     LITERAL,
     // End of file

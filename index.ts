@@ -21,7 +21,6 @@ class GarbageREPL {
     this.walker = new GarbageTreeWalker();
   };
 
-
   private recall () {
     this.rl.question("> ", (userInput) => {
       if (userInput === "exit") {
