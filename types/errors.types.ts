@@ -7,6 +7,13 @@ namespace GarbageErrors {
         this.name = "RuntimeError"
       };
     };
+
+    export class EnvironmentError extends Error {
+      constructor(message: string) {
+        super(message)
+        this.name = "EnvironmentError"
+      };
+    };
   };
 
   export namespace FrontendErrors {

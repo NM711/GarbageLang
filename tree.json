@@ -1,0 +1,17 @@
+{
+  "type": "Program",
+  "body": [
+    {
+      "type": "ExpressionPrefixer",
+      "left": {
+        "type": "Identifier",
+        "name": "hello"
+      },
+      "prefix": "--"
+    },
+    {
+      "type": "EndStatement",
+      "value": ";"
+    }
+  ]
+}

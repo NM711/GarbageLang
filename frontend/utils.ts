@@ -14,8 +14,8 @@ export function isNumber(char: string): boolean {
 };
 
 export function isAlphabet(char: string): boolean {
-  const isTrue = /^[A-Za-z]+$/.test(char);
-  return isTrue;
+  if (!char) return false;
+  return /^[A-Za-z]+$/.test(char);
 };
 
 export function isNumId (token: Token): boolean {

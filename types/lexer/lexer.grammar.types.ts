@@ -19,6 +19,8 @@ namespace LexerGrammarTypes {
     AND,
     EQUALITY,
     EQUAL,
+    PREFIX_INCREMENT,
+    PREFIX_DECREMENT,
     ADDITION,
     SUBTRACTION,
     MULTIPLICATION,
@@ -30,7 +32,6 @@ namespace LexerGrammarTypes {
     LEFT_CURLY_BRACE,
     DOUBLE_QUOTE,
     LINE_BREAK,
-    WHITESPACE,
     // Literals
     LITERAL,
     // End of file
@@ -99,6 +100,8 @@ namespace LexerGrammarTypes {
     "===": LangTokenIdentifier.EQUALITY,
     "|": LangTokenIdentifier.OR,
     "&": LangTokenIdentifier.AND,
+    "++": LangTokenIdentifier.PREFIX_INCREMENT,
+    "--": LangTokenIdentifier.PREFIX_INCREMENT
   };
 };
 

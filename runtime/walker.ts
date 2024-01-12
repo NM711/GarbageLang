@@ -1,6 +1,7 @@
 import AbstractSyntaxTreeTypes from "../types/ast.types";
 import GarbageEnvironment from "./environment";
 import type RuntimeTypes from "../types/runtime.types";
+import { isNumber } from "../frontend/utils";
 
 class GarbageTreeWalker {
   private environment: GarbageEnvironment;
@@ -10,10 +11,7 @@ class GarbageTreeWalker {
   };
 
   public evaluateProgram (program: AbstractSyntaxTreeTypes.ProgramNode): RuntimeTypes.RuntimeValue {
-    let lastEvaled: RuntimeTypes.RuntimeValue = {
-      type: "null",
-      value: null
-    };
+    let lastEvaled: RuntimeTypes.RuntimeValue = this.defaultNull();
 
     for (const stmnt of program.body) {
       lastEvaled = this.evaluate(stmnt);
@@ -22,20 +20,13 @@ class GarbageTreeWalker {
     return lastEvaled;
   };
 
-  private returnNum (value: number): RuntimeTypes.NumberValue {
-    return {
-      type: "number",
-      value
-    };
-  };
-
   private evalBinaryExpr (expr: AbstractSyntaxTreeTypes.Expr): RuntimeTypes.RuntimeValue {
     let lhs = this.evaluate(expr.left);
     let rhs = this.evaluate(expr.right);
    
     let result: string | number = 0;
 
-    if (lhs.type === "number" && rhs.type === "number") {
+    if ( (lhs.type === "Int" || lhs.type === "Float") && (rhs.type === "Int" || rhs.type === "Float") ) {
       switch (expr.operator) {
         case "+":
           result = lhs.value + rhs.value;
@@ -53,56 +44,73 @@ class GarbageTreeWalker {
         break;
       };
 
-      return this.returnNum(result);
-    } else if (lhs.type === "string" && rhs.type === "string" && expr.operator === "+") {
+     return this.defaultNum(result);
+
+    } else if (lhs.type === "String" && rhs.type === "String" && expr.operator === "+") {
       result = lhs.value + rhs.value;
-      return {
-        type: "string",
-        value: result
-      };
+      return this.defaultStr(result);
     } else {
         console.error("Unexpected error when attempting to evaluate expression!");
         process.exit(1);
     };
   };
 
-  private defaultNum (value: number = 0): RuntimeTypes.NumberValue {
-    return {
-      type: "number",
-      value
+  private defaultNum(value: number = 0): RuntimeTypes.NumberValue {
+    const stringifiedValue = value.toString();
+    if (stringifiedValue.includes(".")) {
+      return {
+        type: "Float",
+        value
+      };
+    } else {
+      return {
+        type: "Int",
+        value
+      };
     };
   };
 
   private defaultStr(value: string = ""): RuntimeTypes.StringValue {
     return {
-      type: "string",
+      type: "String",
       value
     };
   };
 
   private defaultNull(): RuntimeTypes.NullValue {
     return {
-      type: "null",
+      type: "Null",
       value: null
     };
   };
 
-  private evalVar(node: AbstractSyntaxTreeTypes.VariableDeclarationNode) {
-    /**
-    * When a variable is declared without assignment, depending on the type it will default to a specific value of that type.
-    */
+  private evalPrefix(node: AbstractSyntaxTreeTypes.ExpressionPrefixer) {
+    const currentNodeValue = this.environment.obtain(node.left.name);
 
-    if (!node.value) {
-      switch (node.identifier.identiferType) {
-        case "Int":
-        case "Float":
-          return this.environment.declare(node.identifier.name, node.isConstant, this.defaultNum())
-        case "String":
-          return this.environment.declare(node.identifier.name, node.isConstant, this.defaultStr());
-      };
-    } else {
-      
+    if (currentNodeValue.typeDef !== "Int" && currentNodeValue.typeDef !== "Float") {
+      console.error(`Expected an "INT" or "FLOAT"!`);
+      process.exit(1);
     };
+
+    let updatedResult: number = currentNodeValue.value.value as number;
+
+    if (node.prefix === "++") {
+      updatedResult = ++updatedResult;
+
+    } else if (node.prefix === "--") {
+      updatedResult = --updatedResult;
+    };
+
+    console.log(updatedResult);
+
+    return this.environment.assign(node.left.name, {
+      type: currentNodeValue.typeDef,
+      value: updatedResult
+    });
+  };
+
+  private evalVar(node: AbstractSyntaxTreeTypes.VariableDeclarationNode) {
+    return this.environment.declare(node.assignment.left as AbstractSyntaxTreeTypes.IdentifierWithType, node.isConstant, this.evaluate(node.assignment.right));
   };
 
   private evaluate (node: AbstractSyntaxTreeTypes.TreeNodeType): RuntimeTypes.RuntimeValue {
@@ -118,10 +126,23 @@ class GarbageTreeWalker {
       
       case AbstractSyntaxTreeTypes.NodeType.STR_LITERAL:
         return this.defaultStr(node.value);
-       
+      
+      case AbstractSyntaxTreeTypes.NodeType.EXPR_ASSIGN:
+        const value = this.evaluate(node.right);
+        return this.environment.assign(node.left.name, value);
+
       case AbstractSyntaxTreeTypes.NodeType.EXPR_BINARY:
         return this.evalBinaryExpr(node);
-      
+     
+      case AbstractSyntaxTreeTypes.NodeType.EXPR_PREFIXER:
+        return this.evalPrefix(node);
+
+      case AbstractSyntaxTreeTypes.NodeType.STATEMENT_END:
+        return {
+          type: "end",
+          value: ";"
+        };
+        
       default: {
         console.error("Unexpected node type!");
         process.exit(1);

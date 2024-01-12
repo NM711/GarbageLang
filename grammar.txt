@@ -1,41 +1,31 @@
-<VAR> = const/let
-<IDENT> = identifier
-<TYPE> = String | Int | Float | Null | NaN
+// The context free grammar of this specific language, it is not perfect but, it gives me a base to go off of.
 
---- Var Declaration
+<Ident> := n
 
-<VAR> <IDENT> <TYPE>
+<Literal> := v
 
--- Conditionals
+<Const> := <Ident> <Type>; | <Ident> <Type> = <Literal> | <Expression>;
 
-<IF> = if
-<EXPR> = <Binary> | <Unary>
-<OPERAND> = + | - | * | / | & | (||) | && | === | > | < | <= | >= | =
-<LITERAL> = <TYPE>
+<Var> := let <Ident> <Type>; | let <Ident> <Type> = <Literal> | <Expression>;
 
-<Unary> = {
-  left: <Literal>,
-  right: <Literal>,
-  operator: <OPERAND>
-}
+<VarDeclare> := <Var> | <Const>
 
-<Binary> = {
-  left: <Literal | Unary>,
-  right: <Literal | Unary>,
-  operator: <OPERAND>
-}
+<Type> := String | Int | Float | Null | Object | Array
 
-<BLOCK> = <ANYTHING>
+<Expression> := <BinaryExpr> | <UnaryExpr>
 
-<IF> ( <EXPR> ) <BLOCK>
+<Number> := <Type::Int> | <Type::Float>
+
+<Operator> := + | - | * | / | === | > | < | <= | >=
+
+<UnaryExpr> := <Number> <Operator> <Number> | <Type::String> + <Type::String>
+
+<BinaryExpr> := <Expression> 
 
 --- Loops
-
-<FOR> = for
-
-<INIT> = <VAR> <TYPE::Int>
-
-<INC> = <INIT>(++) -> + 1
-<DEC> = <INIT>(--) -> - 1
-
-<FOR> ( <INIT>; <EXPR>; <INC/DEC> ) <BLOCK>
+<Block> := { <S> }
+<Initializer> := <Var> | <Identifier>
+<Initialized> := <Literal>
+<Updated> := ++<Initialized> | --<Initialized>
+<For> := for (<Initializer>;<Expression>;<Updater>) <Block>
+<Infinite> := loop <Block>
