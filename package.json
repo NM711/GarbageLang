@@ -1,4 +1,8 @@
 {
+ "scripts": {
+  "main": "npx tsx ./index.ts",
+  "test": "npx tsx ./test.ts"
+ },
   "dependencies": {
     "@types/node": "^20.10.4"
   }

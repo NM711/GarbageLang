@@ -2,16 +2,44 @@
   "type": "Program",
   "body": [
     {
-      "type": "ExpressionPrefixer",
-      "left": {
-        "type": "Identifier",
-        "name": "hello"
+      "type": "IfStatement",
+      "condition": {
+        "type": "ExpressionBinary",
+        "left": {
+          "type": "NumberLiteral",
+          "value": 5
+        },
+        "right": {
+          "type": "NumberLiteral",
+          "value": 0
+        },
+        "operator": "<"
       },
-      "prefix": "--"
-    },
-    {
-      "type": "EndStatement",
-      "value": ";"
+      "block": {
+        "type": "BlockStatement",
+        "body": [
+          {
+            "type": "DeclarationVariable",
+            "isConstant": false,
+            "assignment": {
+              "type": "ExpressionAssignment",
+              "left": {
+                "type": "Identifier",
+                "name": "x",
+                "identifierType": "Int"
+              },
+              "right": {
+                "type": "NumberLiteral",
+                "value": 20
+              }
+            }
+          },
+          {
+            "type": "EndStatement",
+            "value": ";"
+          }
+        ]
+      }
     }
   ]
 }

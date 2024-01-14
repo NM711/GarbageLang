@@ -1,7 +1,7 @@
 import readline from "node:readline";
 import fs from "node:fs";
 import GarbageLexer from "./frontend/lexer";
-import GarbageParser from "./frontend/parser";
+import GarbageParser from "./frontend/parser/parser";
 import GarbageTreeWalker from "./runtime/walker";
 import type { ReadLine } from "node:readline";
 
@@ -29,6 +29,8 @@ class GarbageREPL {
 
       this.lexer.setData = userInput || "";
       const tokens = this.lexer.getTokens();
+
+      // console.log(tokens);
       this.parser.setTokens = tokens;
       const tree = this.parser.generateAST();
 
@@ -36,8 +38,7 @@ class GarbageREPL {
         if (err) console.error(err)
       });
 
-      const res = this.walker.evaluateProgram(tree);
-      console.log(res)
+      console.log(this.walker.evaluateProgram(tree));
       return this.recall();
     });
   };

@@ -131,6 +131,10 @@ class GarbageLexer {
         break;
       };
 
+      if (this.char === "\n") {
+        continue;
+      };
+
       this.checkIfNumber();
       this.checkIfLiteral();
       const lookup = this.lookup();
@@ -140,24 +144,27 @@ class GarbageLexer {
       } else {
         this.pushTokenWithKeyAsLexeme(LexerGrammarTypes.LangTokenIdentifier.LITERAL);
       };
-      
+
       if (lookup.special) {
         if (lookup.special && lookup.special === LexerGrammarTypes.LangTokenIdentifier.DOUBLE_QUOTE) {
           this.inString = true;
+          // since we changed the state we now want to rerun the literal tokenizer above
+          // so it can execute the string generator within it.
+          continue;
         };
         this.pushToken(this.char, lookup.special);
       } else if (lookup.operator) {
-          while (true) {
-
-            if (!this.lookup().operator) {
-              break;
-            };
+          // inital update
+          while (this.lookup().operator) {
             this.key += this.char;
             this.updateLineInfo();
           };
-          
-          const operatorId = LexerGrammarTypes.OperatorKeywordMap[this.key];
+
+          const operatorId = LexerGrammarTypes.OperatorKeywordMap[this.key.trim()];
           this.pushTokenWithKeyAsLexeme(operatorId);
+
+          // update the key with the value that comes after the prefix
+          this.key += this.char
       };
     };
     this.pushToken("EOF", LexerGrammarTypes.LangTokenIdentifier.EOF);

@@ -23,9 +23,13 @@
 <BinaryExpr> := <Expression> 
 
 --- Loops
-<Block> := { <S> }
+<Block> := { <S> };
 <Initializer> := <Var> | <Identifier>
 <Initialized> := <Literal>
 <Updated> := ++<Initialized> | --<Initialized>
 <For> := for (<Initializer>;<Expression>;<Updater>) <Block>
 <Infinite> := loop <Block>
+
+-- Conditions
+
+<IF> := if (<Expression>) <Block>;

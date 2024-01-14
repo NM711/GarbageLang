@@ -13,6 +13,8 @@ namespace AbstractSyntaxTreeTypes {
     DECLARATION_FN = "DeclarationFunction",
     FOR_STATEMENT = "ForStatement",
     IF_STATEMENT = "IfStatement",
+    ELSE_STATEMENT = "ElseStatement",
+    BLOCK_STATEMENT = "BlockStatement",
     SWITCH_STATEMENT = "SwitchStatement",
     EXPR_STATEMENT = "ExpressionStatement",
     EXPR_CALL = "ExpressionCall",
@@ -23,7 +25,7 @@ namespace AbstractSyntaxTreeTypes {
   };
 
   export type PrefixOperators = "++" | "--"
-  export type ExpressionOperator = "===" | "|" | "&" | ">" | "<" | ">=" | "<=" | "+" | "-" | "/" | "*" | PrefixOperators;
+  export type ExpressionOperator = "===" | "=" | "|" | "&" | ">" | "<" | ">=" | "<=" | "+" | "-" | "/" | "*" | PrefixOperators;
 
   export interface Identifier {
     type: NodeType.IDENT
@@ -31,7 +33,7 @@ namespace AbstractSyntaxTreeTypes {
   };
 
   export interface IdentifierWithType extends Identifier {
-    identiferType: IdentifierType
+    identifierType: IdentifierType
   };
 
   type LiteralValue<X = void, Y = void> = {
@@ -47,7 +49,7 @@ namespace AbstractSyntaxTreeTypes {
 
   export type StatementEnd = LiteralValue<NodeType.STATEMENT_END, ";">;
 
-  export type Literal = StringLiteral | NumberLiteral | NullLiteral | StatementEnd;
+  export type Literal = StringLiteral | NumberLiteral | NullLiteral | StatementEnd | Identifier | IdentifierWithType;
 
   export type ExpressionBaseType<T, L, R> = {
     type: T,
@@ -85,29 +87,40 @@ namespace AbstractSyntaxTreeTypes {
     assignment: ExpressionAssignmentNode;
   };
 
+  export interface BlockStatementNode {
+    type: NodeType.BLOCK_STATEMENT,
+    body: TreeNodeType[]
+  };
+
   export interface FunctionDeclarationNode {
     type: NodeType.DECLARATION_FN;
     identifier: Identifier;
     params: IdentifierWithType[];
-    body: TreeNodeType[];
+    body: BlockStatementNode;
   };
 
   interface ForLoopExpressions {
-    initializer: VariableDeclarationNode;
+    initializer: VariableDeclarationNode | Identifier;
     condition: Expr;
-    iterator: Expr;
+    updater: ExpressionPrefixer;
   };
 
   export interface ForStatementNode {
     type: NodeType.FOR_STATEMENT;
-    initializer: VariableDeclarationNode;
     info: ForLoopExpressions;
-    body: TreeNodeType[];
+    block: BlockStatementNode;
+  };
+
+  export interface ElseStatementNode {
+    type: NodeType.ELSE_STATEMENT;
+    block: BlockStatementNode;
   };
 
   export interface IFStatementNode {
     type: NodeType.IF_STATEMENT;
-    test: Expr;
+    condition: Expr;
+    block: BlockStatementNode;
+    alternate?: ElseStatementNode;
   };
 
   export type TreeNodeType =
@@ -117,6 +130,7 @@ namespace AbstractSyntaxTreeTypes {
    | ForStatementNode 
    | ExpressionAssignmentNode
    | FunctionDeclarationNode 
+   | BlockStatementNode
    | VariableDeclarationNode 
    | ExpressionPrefixer
    | ExpressionAssignmentNode
