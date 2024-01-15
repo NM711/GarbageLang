@@ -38,11 +38,9 @@ class GarbageREPL {
         if (err) console.error(err)
       });
 
-      console.log(this.walker.evaluateProgram(tree));
       return this.recall();
     });
   };
-
 
   public run () {
     console.log("GarbageLang REPL v1.0");

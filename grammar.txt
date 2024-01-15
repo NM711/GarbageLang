@@ -1,8 +1,8 @@
 // The context free grammar of this specific language, it is not perfect but, it gives me a base to go off of.
 
-<Ident> := n
+<Ident> := a
 
-<Literal> := v
+<Literal> := b
 
 <Const> := <Ident> <Type>; | <Ident> <Type> = <Literal> | <Expression>;
 
@@ -22,6 +22,18 @@
 
 <BinaryExpr> := <Expression> 
 
+--- Functions
+
+<Param> := <Ident> <Type>
+<Params> := <Param> | , <Params>
+<Function> := func <Ident> (<Params>) {<Block>} | func <Ident> () <Block>;
+
+func hello (value String, value2 Int) {};
+
+<Argument> := <Ident> | <Literal>
+<Arguments> := <Argument> | , <Arguments>
+<ExprCall> := call <Ident> () | call <Ident> (<Arguments>) 
+
 --- Loops
 <Block> := { <S> };
 <Initializer> := <Var> | <Identifier>
@@ -30,6 +42,6 @@
 <For> := for (<Initializer>;<Expression>;<Updater>) <Block>
 <Infinite> := loop <Block>
 
--- Conditions
+--- Conditions
 
-<IF> := if (<Expression>) <Block>;
+<IF> := if (<Expression>) <Block>

@@ -33,19 +33,20 @@ namespace RuntimeTypes {
     value: RuntimeTypes.RuntimeValue;
   };
 
-  // export interface EnvironmentBlock {
-    // type: "EnvironmentBlock",
-    // body: Environment[]
-  // };
-
   export interface EnvironmentFunction {
     type: "EnvironmentFunction";
     value: AbstractSyntaxTreeTypes.FunctionDeclarationNode;
   };
 
-  export type EnvironmentValue = EnvironmentVariable | EnvironmentFunction;
+  export interface NativeFunction {
+    type:"NativeFunction";
+    params: AbstractSyntaxTreeTypes.IdentifierWithType[];
+    call: (args: any[]) => any;
+  };
+
+  export type EnvironmentValue = NativeFunction | EnvironmentVariable | EnvironmentFunction;
     
-  export type RuntimeValue = StatementEnd | NumberValue | NullValue | StringValue | BooleanValue
+  export type RuntimeValue = StatementEnd | NumberValue | NullValue | StringValue | BooleanValue;
 };
 
 export default RuntimeTypes;

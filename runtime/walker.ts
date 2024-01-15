@@ -1,6 +1,7 @@
 import AbstractSyntaxTreeTypes from "../types/ast.types";
 import GarbageEnvironment from "./environment";
-import type RuntimeTypes from "../types/runtime.types";
+import RuntimeTypes from "../types/runtime.types";
+import GarbageErrors from "../types/errors.types";
 
 class GarbageTreeWalker {
   private environment: GarbageEnvironment;
@@ -19,6 +20,80 @@ class GarbageTreeWalker {
     return lastEvaled;
   };
 
+  private evalFn(node: AbstractSyntaxTreeTypes.FunctionDeclarationNode) {
+    // within x scope the evaluated declared fn will hold the object that was assigned during the parsing process.
+    this.environment.declareFn(node);
+  };
+
+  private checkParamLenMatch(node: AbstractSyntaxTreeTypes.CallExpressionNode, called: RuntimeTypes.EnvironmentFunction | RuntimeTypes.NativeFunction) {
+    const message = "Number of given arguments does not match with the number of required arguments!";
+
+    if (called.type === "EnvironmentFunction" && node.arguments.length !== called.value.params.length) {
+      throw new GarbageErrors.RuntimeErrors.RuntimeError(message);
+    } else if (called.type === "NativeFunction" && node.arguments.length !== called.params.length) {
+      throw new GarbageErrors.RuntimeErrors.RuntimeError(message);
+    };
+  };
+
+  private evalFnCall(node: AbstractSyntaxTreeTypes.CallExpressionNode) {
+    const called = this.environment.pubObtain(node.calle.name) as RuntimeTypes.EnvironmentFunction | RuntimeTypes.NativeFunction;
+
+    this.checkParamLenMatch(node, called);
+
+    if (called.type === "NativeFunction") {
+
+      const args: any[] = []
+
+      for (let i = 0; i < called.params.length; i++) {
+        const argument = node.arguments[i];
+        const param = called.params[i];
+
+        if (argument.type === AbstractSyntaxTreeTypes.NodeType.IDENT) {
+          const argVal = this.environment.pubObtain(argument.name);
+          if (argVal.type !== param.identifierType && param.identifierType !== "Any") {
+            throw new GarbageErrors.RuntimeErrors.RuntimeError("The type of the given argument and the expected param do not match!");
+          };
+
+          args.push(argVal.value);
+        } else {
+          const arg = this.evaluate(argument);
+          if (arg.type !== param.identifierType && param.identifierType !== "Any") {
+            throw new GarbageErrors.RuntimeErrors.RuntimeError("The type of the given argument and the expected param do not match!");
+          };
+
+          args.push(arg.value);
+        };
+      };
+
+      if (node.calle.name) {
+        called.call.apply(null, args);
+      };
+
+    } else {
+      this.environment.pushEnvironment();
+    
+      for (let i = 0; i < called.value.params.length; i++) {
+
+        const argument = node.arguments[i];
+        const param = called.value.params[i];
+        if (argument.type === AbstractSyntaxTreeTypes.NodeType.IDENT) {
+          const argumentValue = this.environment.pubObtain(argument.name);
+      
+          if (argumentValue.type !== param.identifierType) {
+            throw new GarbageErrors.RuntimeErrors.RuntimeError("The type of the given argument and the expected param do not match!");
+          };
+
+          const argValue = this.environment.pubObtain(argument.name) as RuntimeTypes.RuntimeValue;
+          this.environment.declareVar(param, false, argValue);
+        } else {
+          this.environment.declareVar(param, false, this.evaluate(argument));
+        };
+      };
+
+    this.evalBlock(called.value.body, false);
+    };
+  };
+
   private evalBinaryExpr (expr: AbstractSyntaxTreeTypes.Expr): RuntimeTypes.RuntimeValue {
     
     const lhs = this.evaluate(expr.left);
@@ -26,13 +101,8 @@ class GarbageTreeWalker {
    
     let result: string | number = 0;
 
-
     if ( (lhs.type === "Int" || lhs.type === "Float") && (rhs.type === "Int" || rhs.type === "Float") ) {
       switch (expr.operator) {
-        // case "=":
-          // result = this.evaluate(expr.right).value as number
-        // break;
-
         case "+":
           result = lhs.value + rhs.value;
         break;
@@ -145,17 +215,17 @@ class GarbageTreeWalker {
 
     while (this.evaluate(node.info.condition).value) {
       this.evaluate(node.info.updater);
-
-      for (const stmnt of node.block.body) {
-        evaled = this.evaluate(stmnt);
-      };
+      this.evalBlock(node.block);
     };
 
     return evaled;
   };
 
-  private evalBlock(node: AbstractSyntaxTreeTypes.BlockStatementNode) {
-    this.environment.pushEnvironment();
+  private evalBlock(node: AbstractSyntaxTreeTypes.BlockStatementNode, pushNew: boolean = true) {
+    if (pushNew) {
+      this.environment.pushEnvironment();
+    };
+
     for (const stmnt of node.body) {
       this.evaluate(stmnt);
     };
@@ -179,6 +249,10 @@ class GarbageTreeWalker {
     switch (node.type) {
       case AbstractSyntaxTreeTypes.NodeType.DECLARATION_VAR:
         return this.evalVar(node);
+    
+      case AbstractSyntaxTreeTypes.NodeType.DECLARATION_FN:
+        this.evalFn(node);
+        return this.defaultNull();
 
       case AbstractSyntaxTreeTypes.NodeType.NUM_LITERAL:
         return this.defaultNum(node.value);
@@ -200,7 +274,7 @@ class GarbageTreeWalker {
       case AbstractSyntaxTreeTypes.NodeType.EXPR_PREFIXER:
         this.evalPrefix(node);
         return this.defaultNull();
-    
+
       case AbstractSyntaxTreeTypes.NodeType.FOR_STATEMENT:
         return this.evalForStmnt(node);
 
@@ -214,10 +288,15 @@ class GarbageTreeWalker {
           value: ";"
         };
 
+      case AbstractSyntaxTreeTypes.NodeType.EXPR_CALL:
+        this.evalFnCall(node);
+        return this.defaultNull();
+
       case AbstractSyntaxTreeTypes.NodeType.IDENT:
-        return this.environment.pubObtain(node.name);
+        return this.environment.pubObtain(node.name) as RuntimeTypes.RuntimeValue;
         
       default: {
+        console.log(node)
         console.error("Unexpected node type!");
         process.exit(1);
       };

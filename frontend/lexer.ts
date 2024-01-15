@@ -3,6 +3,8 @@ import { isNumber, isAlphabet } from "./utils";
 import GarbageErrors from "../types/errors.types";
 import type { LineInfo, Token } from "../types/lexer/lexer.types";
 
+// Whenever I have time im gonna scrap this entire lexer and rebuilt it from the ground up.
+
 interface LookupMap {
   special: LexerGrammarTypes.LangTokenIdentifier;
   operator: LexerGrammarTypes.LangTokenIdentifier;
@@ -16,12 +18,15 @@ class GarbageLexer {
   private data: string[];
   private char: string | undefined;
   private inString: boolean;
+  private inLiteral: boolean;
   protected lineInfo: LineInfo;
+  
   constructor() {
     this.tokens = [];
     this.data = [];
     this.key = "";
     this.inString = false;
+    this.inLiteral = false;
     this.lineInfo = this.resetLineInfo();
   };
 
@@ -61,6 +66,7 @@ class GarbageLexer {
 
   private pushTokenWithKeyAsLexeme(id: LexerGrammarTypes.LangTokenIdentifier) {
     if (this.key !== "" && this.key !== " ") {
+      this.key = this.key.trim();
       this.pushToken(this.key, id);
       this.key = "";
     };
@@ -69,7 +75,7 @@ class GarbageLexer {
   private checkIfNumber(): void {
     while (isNumber(this.char as string)) {
       this.key += this.char;
-      this.updateLineInfo(); 
+      this.updateLineInfo();
     };
 
     if (isNumber(this.key)) {
@@ -82,26 +88,46 @@ class GarbageLexer {
   };
   
   private checkIfLiteral(): void {
-    while (isAlphabet(this.char as string) || this.inString) {
+    if (isAlphabet(this.char as string)) {
+      this.inLiteral = true;
+    };
 
-      if (this.inString) {
-
-          if (!this.char) {
-            throw this.syntaxError("Unexpectedly reached end of file before string closure!", this.key);
-          } else if (this.char === "\n") {
-            throw this.syntaxError("Unexpected line break before string closure!", `${this.key}${this.char}`)
-          };
-          
-          if (this.char === '"') {
-            this.pushTokenWithKeyAsLexeme(LexerGrammarTypes.LangTokenIdentifier.STRING);
-            this.inString = false;
-            this.updateLineInfo();
-            break;
-          };
+    while (this.inString) {
+      if (!this.char) {
+        throw this.syntaxError("Unexpectedly reached end of file before string closure!", this.key);
+      } else if (this.char === "\n") {
+        throw this.syntaxError("Unexpected line break before string closure!", `${this.key}${this.char}`)
       };
+          
+      if (this.char === '"') {
+        this.pushTokenWithKeyAsLexeme(LexerGrammarTypes.LangTokenIdentifier.STRING);
+        this.inString = false;
+        this.updateLineInfo();
+        break;
+      };
+
       this.key += this.char;
       this.updateLineInfo();
     };
+
+    while (this.inLiteral) {
+      // const hello world - Invalid
+      // const hello - Valid
+      // break out when a literal contains something other than a number or 
+
+      if (!isAlphabet(this.char as string) && !isNumber(this.char as string)) {
+        break;
+      };
+
+      this.key += this.char;
+      this.updateLineInfo();
+
+      if (this.key.length > 0 && !isAlphabet(this.key.charAt(0))) {
+        this.syntaxError("Literals must commence with a valid alphabet character!", `${this.key}`);
+      };
+    };
+
+    this.inLiteral = false;
   };
 
   private lookup(): LookupMap {
@@ -140,7 +166,9 @@ class GarbageLexer {
       const lookup = this.lookup();
       
       if (lookup.declared || lookup.type) {
-        this.pushTokenWithKeyAsLexeme(lookup.declared ?? lookup.type);
+        if (lookup.declared && lookup.declared === LexerGrammarTypes.LangTokenIdentifier.FUNCTION_CALL) {
+          this.pushTokenWithKeyAsLexeme(LexerGrammarTypes.LangTokenIdentifier.FUNCTION_CALL);
+        } else this.pushTokenWithKeyAsLexeme(lookup.declared ?? lookup.type);
       } else {
         this.pushTokenWithKeyAsLexeme(LexerGrammarTypes.LangTokenIdentifier.LITERAL);
       };

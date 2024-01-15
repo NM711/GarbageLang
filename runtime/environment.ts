@@ -1,11 +1,11 @@
 import AbstractSyntaxTreeTypes from "../types/ast.types";
+import GarbageNativeFunctions from "./native";
 import GarbageErrors from "../types/errors.types";
 import RuntimeTypes from "../types/runtime.types";
 
 // #TODO
 //
 // Create a environment stack
-
 
 /**
  * @class GarbageEnvironment
@@ -31,6 +31,8 @@ class GarbageEnvironment {
   public pushEnvironment() {
     ++this.current;
     this.environments.push(new Map());
+    // initializer
+    new GarbageNativeFunctions(this.environments[0]).initalize();
   };
 
   public popEnvironment() {
@@ -58,6 +60,20 @@ class GarbageEnvironment {
     };
   };
 
+  public declareFn(node: AbstractSyntaxTreeTypes.FunctionDeclarationNode) {
+    if (this.environments.length > 0) {
+      for (let i = this.environments.length - 1; i >= 0; i--) {
+        this.current = i;
+        this.checkDef(node.identifier.name);
+      };
+    } else this.checkDef(node.identifier.name);
+
+    this.environments[this.current].set(node.identifier.name, {
+      type: "EnvironmentFunction",
+      value: node
+    });
+  };
+
   public declareVar(ident: AbstractSyntaxTreeTypes.IdentifierWithType, isConstant: boolean, value: RuntimeTypes.RuntimeValue) {
     // when declaring a variable, we want to check if it has been defined in any environment before the current environment.
     if (this.environments.length > 0) {
@@ -66,6 +82,11 @@ class GarbageEnvironment {
         this.checkDef(ident.name);
       };
     } else this.checkDef(ident.name);
+
+
+    if (value.type !== ident.identifierType) {
+      throw new GarbageErrors.RuntimeErrors.EnvironmentError(`Attempted to perform cross type assignment on variable "${ident.name}", "${ident.name}" is supposed to be of type "${ident.identifierType}" but instead was given type of "${value.type}"!`); 
+    };
 
     this.environments[this.current].set(ident.name, {
       type:"EnvironmentVariable",
@@ -99,13 +120,10 @@ class GarbageEnvironment {
   * a runtime value with the set environment value
   **/
 
-  public pubObtain(ident: string): RuntimeTypes.RuntimeValue {
+  public pubObtain(ident: string): RuntimeTypes.RuntimeValue | RuntimeTypes.EnvironmentValue {
     const obtained = this.obtain(ident);
-
-    if (obtained.type === "EnvironmentFunction") {
-    
-      // do something here once you begin handling functions
-
+    if (obtained.type === "EnvironmentFunction" || obtained.type === "NativeFunction") {
+      return obtained;
     } else {
       return {
         type: obtained.typeDef,

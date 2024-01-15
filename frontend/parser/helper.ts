@@ -1,4 +1,5 @@
 import GarbageErrors from "../../types/errors.types";
+import {IdentifierType} from "../../types/general.types";
 import LexerGrammarTypes from "../../types/lexer/lexer.grammar.types";
 import type { Token } from "../../types/lexer/lexer.types";
 
@@ -31,6 +32,19 @@ class ParserHelpers {
 
   public expectSemicolon(look: Token) {
     this.expect({ id: LexerGrammarTypes.LangTokenIdentifier.SEMICOLON, token: look, mssg: "Expected ending semicolon!" });
+  };
+
+  public checkType(token: Token): IdentifierType {
+    const isType = LexerGrammarTypes.DataTypeKeywordMap[token.lexeme];
+    if (!isType) {
+      throw new GarbageErrors.FrontendErrors.ParserError({
+        message: "Expected a valid type!",
+        char: token.char,
+        line: token.line,
+        at: token.lexeme
+      });
+    };
+    return token.lexeme as IdentifierType; 
   };
 
   public isAdditive(token: Token): boolean {

@@ -98,6 +98,12 @@ namespace AbstractSyntaxTreeTypes {
     params: IdentifierWithType[];
     body: BlockStatementNode;
   };
+  
+  export interface CallExpressionNode {
+    type: NodeType.EXPR_CALL;
+    calle: Identifier;
+    arguments: (Identifier | Literal)[];
+  };
 
   interface ForLoopExpressions {
     initializer: VariableDeclarationNode | Identifier;
@@ -134,6 +140,7 @@ namespace AbstractSyntaxTreeTypes {
    | VariableDeclarationNode 
    | ExpressionPrefixer
    | ExpressionAssignmentNode
+   | CallExpressionNode
    | ProgramNode;
 
 };

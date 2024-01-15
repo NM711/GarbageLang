@@ -1,8 +1,1 @@
-export type IdentifierType = 
-  "String"  |
-  "Null"    |
-  "Obj"     |
-  "Boolean" |
-  "Float"   |
-  "Array"   |
-  "Int";
+export type IdentifierType = "String"  | "Null" | "Obj" | "Boolean" | "Float" | "Array" | "Int" | "Any" ;

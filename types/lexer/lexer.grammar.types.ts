@@ -9,6 +9,7 @@ namespace LexerGrammarTypes {
     OBJECT,
     BOOLEAN,
     NULL,
+    ANY,
     // Singles + Operators
 
     LESSER,
@@ -31,7 +32,6 @@ namespace LexerGrammarTypes {
     RIGHT_CURLY_BRACE,
     LEFT_CURLY_BRACE,
     DOUBLE_QUOTE,
-    LINE_BREAK,
     // Literals
     LITERAL,
     // End of file
@@ -41,15 +41,11 @@ namespace LexerGrammarTypes {
     VARIABLE,
     CONSTANT,
     FUNCTION,
-    CLASS,
-    PARAMETER,
+    FUNCTION_CALL,
     IF,
     ELSE,
     ELSE_IF,
-    SWITCH,
-    FOR,
-    WHILE,
-    LOG
+    FOR
   };
 
   // Keyword Lookups
@@ -59,10 +55,8 @@ namespace LexerGrammarTypes {
     "const": LangTokenIdentifier.CONSTANT,
     "let": LangTokenIdentifier.VARIABLE,
     "for": LangTokenIdentifier.FOR,
-    "while": LangTokenIdentifier.WHILE,
-    "switch": LangTokenIdentifier.SWITCH,
-    "log": LangTokenIdentifier.LOG,
     "if": LangTokenIdentifier.IF,
+    "call": LangTokenIdentifier.FUNCTION_CALL,
     "else if": LangTokenIdentifier.ELSE_IF,
     "else": LangTokenIdentifier.ELSE
   };
@@ -75,6 +69,7 @@ namespace LexerGrammarTypes {
     "Boolean": LangTokenIdentifier.BOOLEAN,
     "Float": LangTokenIdentifier.FLOAT,
     "Int": LangTokenIdentifier.INT,
+    "Any": LangTokenIdentifier.ANY
   };
 
   export const SpecialCharKeywordMap: { [index: string]: LangTokenIdentifier } = {
@@ -83,7 +78,6 @@ namespace LexerGrammarTypes {
    ")": LangTokenIdentifier.RIGHT_PARENTHESES,
    "(": LangTokenIdentifier.LEFT_PARENTHESES,
    ';': LangTokenIdentifier.SEMICOLON,
-   '\n': LangTokenIdentifier.LINE_BREAK,
    '"': LangTokenIdentifier.DOUBLE_QUOTE
   };
 
