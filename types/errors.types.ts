@@ -1,19 +1,56 @@
-namespace FrontendErrors {
-  export class SyntaxError extends Error {
-    message: string;
-    constructor (message: string) {
-      super();
-      this.name = "SyntaxError";
-      this.message = message;
+namespace GarbageErrors {
+
+  export namespace RuntimeErrors {
+    export class RuntimeError extends Error {
+      constructor(message: string) {
+        super(message)
+        this.name = "RuntimeError"
+      };
+    };
+
+    export class EnvironmentError extends Error {
+      constructor(message: string) {
+        super(message)
+        this.name = "EnvironmentError"
+      };
     };
   };
 
-  export interface LineError {
-    char: number,
-    line: number,
-    where: string,
-    what: string,
+  export namespace FrontendErrors {
+
+    export interface IFrontendErrorParams {
+      message: string
+      line: number
+      char: number
+      at: string
+    };
+  
+    class FrontendInterpreterError extends Error {
+      private char: number;
+      private line: number;
+      private at: string;
+  
+      constructor(name: string, fee: IFrontendErrorParams) {
+        super(fee.message);
+        this.name = name;
+        this.line = fee.line,
+        this.char = fee.char,
+        this.at = fee.at
+      };
+    };
+  
+    export class SyntaxError extends FrontendInterpreterError {
+      constructor (fee: IFrontendErrorParams) {
+        super("SyntaxError", fee);
+      };
+    };
+  
+    export class ParserError extends FrontendInterpreterError {
+      constructor (fee: IFrontendErrorParams) {
+        super("ParserError", fee);
+      };
+    };
   };
 };
 
-export default FrontendErrors;
+export default GarbageErrors

@@ -1,0 +1,47 @@
+// The context free grammar of this specific language, it is not perfect but, it gives me a base to go off of.
+
+<Ident> := a
+
+<Literal> := b
+
+<Const> := <Ident> <Type>; | <Ident> <Type> = <Literal> | <Expression>;
+
+<Var> := let <Ident> <Type>; | let <Ident> <Type> = <Literal> | <Expression>;
+
+<VarDeclare> := <Var> | <Const>
+
+<Type> := String | Int | Float | Null | Object | Array
+
+<Expression> := <BinaryExpr> | <UnaryExpr>
+
+<Number> := <Type::Int> | <Type::Float>
+
+<Operator> := + | - | * | / | === | > | < | <= | >=
+
+<UnaryExpr> := <Number> <Operator> <Number> | <Type::String> + <Type::String>
+
+<BinaryExpr> := <Expression> 
+
+--- Functions
+
+<Param> := <Ident> <Type>
+<Params> := <Param> | , <Params>
+<Function> := func <Ident> (<Params>) {<Block>} | func <Ident> () <Block>;
+
+func hello (value String, value2 Int) {};
+
+<Argument> := <Ident> | <Literal>
+<Arguments> := <Argument> | , <Arguments>
+<ExprCall> := call <Ident> () | call <Ident> (<Arguments>) 
+
+--- Loops
+<Block> := { <S> };
+<Initializer> := <Var> | <Identifier>
+<Initialized> := <Literal>
+<Updated> := ++<Initialized> | --<Initialized>
+<For> := for (<Initializer>;<Expression>;<Updater>) <Block>
+<Infinite> := loop <Block>
+
+--- Conditions
+
+<IF> := if (<Expression>) <Block>

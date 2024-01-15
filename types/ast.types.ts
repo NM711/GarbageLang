@@ -1,95 +1,148 @@
+import type { IdentifierType } from "./general.types";
+
 namespace AbstractSyntaxTreeTypes {
 
-  export enum Node {
-    PROGRAM,
-    IDENTIFIER,
-    STRING_LITERAL,
-    NUMBER_LITERAL,
-    DECLARATION_VARIABLE,
-    DECLARATION_FUNCTION,
-    STATEMENT_FOR,
-    STATEMENT_IF,
-    STATEMENT_SWITCH,
-    EXPRESSION_CALL,
-    EXPRESSION_STATEMENT,
-    EXPRESSION_BINARY,
-    EXPRESSION_UNARY
+  export enum NodeType {
+    PROGRAM = "Program",
+    IDENT = "Identifier",
+    STR_LITERAL = "StringLiteral",
+    NUM_LITERAL = "NumberLiteral",
+    NULL_LITERAL = "NullLiteral",
+    STATEMENT_END = "EndStatement",
+    DECLARATION_VAR = "DeclarationVariable",
+    DECLARATION_FN = "DeclarationFunction",
+    FOR_STATEMENT = "ForStatement",
+    IF_STATEMENT = "IfStatement",
+    ELSE_STATEMENT = "ElseStatement",
+    BLOCK_STATEMENT = "BlockStatement",
+    SWITCH_STATEMENT = "SwitchStatement",
+    EXPR_STATEMENT = "ExpressionStatement",
+    EXPR_CALL = "ExpressionCall",
+    EXPR_ASSIGN = "ExpressionAssignment",
+    EXPR_BINARY = "ExpressionBinary",
+    EXPR_UNARY = "ExpressionUnary",
+    EXPR_PREFIXER = "ExpressionPrefixer"
   };
 
-  type IdentifierType = "String" | "Null" | "Obj" | "Boolean" | "Float" | "Array" | "Int";
+  export type PrefixOperators = "++" | "--"
+  export type ExpressionOperator = "===" | "=" | "|" | "&" | ">" | "<" | ">=" | "<=" | "+" | "-" | "/" | "*" | PrefixOperators;
 
-  interface DeclarationIdentifer {
-    type: Node.IDENTIFIER
+  export interface Identifier {
+    type: NodeType.IDENT
     name: string
   };
 
-  interface DeclarationIdentiferWithType extends DeclarationIdentifer {
-    identiferType: IdentifierType
+  export interface IdentifierWithType extends Identifier {
+    identifierType: IdentifierType
   };
 
-  type DeclarationValue<X = void, Y = void> = {
+  type LiteralValue<X = void, Y = void> = {
     type: X,
     value: Y
   };
 
-  type DeclarationValueString = DeclarationValue<Node.STRING_LITERAL, string>;
+  export type StringLiteral = LiteralValue<NodeType.STR_LITERAL, string>;
 
-  type DeclarationValueNumber = DeclarationValue<Node.NUMBER_LITERAL, number>;
+  export type NumberLiteral = LiteralValue<NodeType.NUM_LITERAL, number>;
 
-  type DeclarationLiteralValue = DeclarationValueNumber | DeclarationValueString;
+  export type NullLiteral = LiteralValue<NodeType.NULL_LITERAL, null>;
 
-  type LeftOrRightBinaryExpressionType = DeclarationIdentiferWithType | DeclarationLiteralValue | BinaryExpression;
+  export type StatementEnd = LiteralValue<NodeType.STATEMENT_END, ";">;
 
-  interface BinaryExpression {
-    type: Node.EXPRESSION_BINARY
-    left: LeftOrRightBinaryExpressionType
-    operator: string
-    right: LeftOrRightBinaryExpressionType
+  export type Literal = StringLiteral | NumberLiteral | NullLiteral | StatementEnd | Identifier | IdentifierWithType;
+
+  export type ExpressionBaseType<T, L, R> = {
+    type: T,
+    left: L,
+    operator: ExpressionOperator,
+    right: R
   };
 
+  export type UnaryExpr = ExpressionBaseType<NodeType.EXPR_UNARY, Literal, Literal>;
+  export type BinaryExpr = ExpressionBaseType<NodeType.EXPR_BINARY, UnaryExpr | Literal, UnaryExpr | Literal>;
+  export type Expr = UnaryExpr | BinaryExpr;
+  
   // Nodes
 
   export interface ProgramNode {
-    type: Node.PROGRAM
-    body: TreeNodeType[]
+    type: NodeType.PROGRAM;
+    body: TreeNodeType[];
+  };
+
+  export interface ExpressionAssignmentNode {
+    type: NodeType.EXPR_ASSIGN,
+    left: Identifier | IdentifierWithType,
+    right: Expr | Literal
+  };
+
+  export interface ExpressionPrefixer {
+    type: NodeType.EXPR_PREFIXER;
+    prefix: PrefixOperators; 
+    left: Identifier;
   };
 
   export interface VariableDeclarationNode {
-    type: Node.DECLARATION_VARIABLE,
-    isConstant: boolean,
-    identifier: DeclarationIdentiferWithType
-    value: DeclarationLiteralValue
+    type: NodeType.DECLARATION_VAR;
+    isConstant: boolean;
+    assignment: ExpressionAssignmentNode;
+  };
+
+  export interface BlockStatementNode {
+    type: NodeType.BLOCK_STATEMENT,
+    body: TreeNodeType[]
   };
 
   export interface FunctionDeclarationNode {
-    type: Node.DECLARATION_FUNCTION
-    identifier: DeclarationIdentifer
-    params: DeclarationIdentiferWithType[]
-    body: TreeNodeType[]
+    type: NodeType.DECLARATION_FN;
+    identifier: Identifier;
+    params: IdentifierWithType[];
+    body: BlockStatementNode;
+  };
+  
+  export interface CallExpressionNode {
+    type: NodeType.EXPR_CALL;
+    calle: Identifier;
+    arguments: (Identifier | Literal)[];
   };
 
-  // type -> for
-  // initializer -> for (let i = 0;)
-  // binaryExpr1 -> for (let i = 0; i < 5;)
-  // binaryExpr2 -> for (let i = 0; i < 5; i + 1)
-  // body => 
-  // for (let i = 0; i < 5; i + 1) {
-  // }
+  interface ForLoopExpressions {
+    initializer: VariableDeclarationNode | Identifier;
+    condition: Expr;
+    updater: ExpressionPrefixer;
+  };
 
   export interface ForStatementNode {
-    type: Node.STATEMENT_FOR,
-    initializer: VariableDeclarationNode,
-    binaryExpr1: BinaryExpression,
-    binaryExpr2: BinaryExpression,
-    body: TreeNodeType[]
+    type: NodeType.FOR_STATEMENT;
+    info: ForLoopExpressions;
+    block: BlockStatementNode;
+  };
+
+  export interface ElseStatementNode {
+    type: NodeType.ELSE_STATEMENT;
+    block: BlockStatementNode;
   };
 
   export interface IFStatementNode {
-    type: Node.STATEMENT_IF,
-    test: BinaryExpression;
+    type: NodeType.IF_STATEMENT;
+    condition: Expr;
+    block: BlockStatementNode;
+    alternate?: ElseStatementNode;
   };
 
-  type TreeNodeType = IFStatementNode | ForStatementNode | FunctionDeclarationNode | VariableDeclarationNode | ProgramNode;
+  export type TreeNodeType =
+   | Literal 
+   | Expr 
+   | IFStatementNode
+   | ForStatementNode 
+   | ExpressionAssignmentNode
+   | FunctionDeclarationNode 
+   | BlockStatementNode
+   | VariableDeclarationNode 
+   | ExpressionPrefixer
+   | ExpressionAssignmentNode
+   | CallExpressionNode
+   | ProgramNode;
+
 };
 
 export default AbstractSyntaxTreeTypes;
