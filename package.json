@@ -1,5 +1,6 @@
 {
  "scripts": {
+  "repl": "npx tsx ./repl.ts",
   "main": "npx tsx ./index.ts",
   "test": "npx tsx ./test.ts"
  },

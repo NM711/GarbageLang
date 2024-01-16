@@ -1,0 +1,11 @@
+let x String = "hello world";
+
+func test (b Int, message String, messageTwo String) {
+  if (b > 3) {
+    call println(message);
+  } else {
+    call println(messageTwo);
+  };
+};
+
+call test(10, "Yay", "Hello");

@@ -26,13 +26,13 @@ class GarbageEnvironment {
     this.current = 0;
     this.environments = [new Map()]
     this.constants = new Set();
+    // initializer
+    new GarbageNativeFunctions(this.environments[0]).initalize();
   };
 
   public pushEnvironment() {
     ++this.current;
     this.environments.push(new Map());
-    // initializer
-    new GarbageNativeFunctions(this.environments[0]).initalize();
   };
 
   public popEnvironment() {
@@ -45,7 +45,7 @@ class GarbageEnvironment {
   private checkDef (ident: string, current: number = this.current) {
     if (this.environments[current].has(ident)) {
       throw new GarbageErrors.RuntimeErrors.EnvironmentError(`The variable that has been attempted to be defined "${ident}", already exists within the runtime environment!`);
-    }; 
+    };
   };
 
   private checkIfConst (ident: string, current: number = this.current) {
@@ -82,7 +82,6 @@ class GarbageEnvironment {
         this.checkDef(ident.name);
       };
     } else this.checkDef(ident.name);
-
 
     if (value.type !== ident.identifierType) {
       throw new GarbageErrors.RuntimeErrors.EnvironmentError(`Attempted to perform cross type assignment on variable "${ident.name}", "${ident.name}" is supposed to be of type "${ident.identifierType}" but instead was given type of "${value.type}"!`); 

@@ -1,0 +1,6 @@
+for (let i Int = 0; i < 100; ++i;) {
+  call println(i);
+  call println("In Loop");
+};
+
+call println("Loop Done");

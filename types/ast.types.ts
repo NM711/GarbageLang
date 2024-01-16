@@ -143,6 +143,8 @@ namespace AbstractSyntaxTreeTypes {
    | CallExpressionNode
    | ProgramNode;
 
+
+  export type IdentOrLiteral = AbstractSyntaxTreeTypes.IdentifierWithType | AbstractSyntaxTreeTypes.Identifier | AbstractSyntaxTreeTypes.Literal;
 };
 
 export default AbstractSyntaxTreeTypes;

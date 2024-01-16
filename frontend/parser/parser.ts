@@ -58,24 +58,16 @@ class GarbageParser {
     };
   };
   
-  // Last day of this project, there is a lot of terrible code. May or may not refactor later.
+  private parseParams(readArgs: boolean = false): AbstractSyntaxTreeTypes.IdentOrLiteral[] {
+    const params: AbstractSyntaxTreeTypes.IdentOrLiteral[] = [];
 
-  private parseParams(argsMode: boolean = false): (AbstractSyntaxTreeTypes.IdentifierWithType | AbstractSyntaxTreeTypes.Identifier | AbstractSyntaxTreeTypes.Literal)[] {
-    const params: (AbstractSyntaxTreeTypes.IdentifierWithType | AbstractSyntaxTreeTypes.Identifier | AbstractSyntaxTreeTypes.Literal)[] = [];
-
-    const t = new Set([
-      LexerGrammarTypes.LangTokenIdentifier.LITERAL,
-      LexerGrammarTypes.LangTokenIdentifier.STRING,
-      LexerGrammarTypes.LangTokenIdentifier.INT,
-      LexerGrammarTypes.LangTokenIdentifier.FLOAT
-    ]);
-
-    while (t.has(this.look().id)) {
+    while (this.helpers.typeSet.has(this.look().id)) {
 
       if (this.look().id === LexerGrammarTypes.LangTokenIdentifier.LITERAL) {
         const ident = this.eat();
         let identType: undefined | IdentifierType;
-        if (!argsMode) {
+        // we know we are reading a fn declaration
+        if (!readArgs) {
           identType = this.helpers.checkType(this.eat());
         };
 
@@ -89,27 +81,17 @@ class GarbageParser {
       };
     };
 
-    // console.log(params, this.look())
-
     return params;
   };
 
   private parseFn(): AbstractSyntaxTreeTypes.FunctionDeclarationNode {
-
-    // since the lexer doesnt really process wether a fn is a fn declaration or a call, parser will be the one to predict that here.
     this.eat();
-
     const ident = this.eat();
-
-    this.helpers.expect({ id: LexerGrammarTypes.LangTokenIdentifier.LEFT_PARENTHESES, token: this.eat(), mssg: "Expected an opening parenthesis!" });
- 
+    this.helpers.expecteParenthesis(this.eat());
     const params = this.parseParams() as AbstractSyntaxTreeTypes.IdentifierWithType[];
-    this.helpers.expect({ id: LexerGrammarTypes.LangTokenIdentifier.RIGHT_PARENTHESES, token: this.eat(), mssg: "Expected a closing parenthesis!" });
-  
+    this.helpers.expecteParenthesis(this.eat(), "RIGHT");
     const fnBlock = this.parseBlock();
-    
     this.helpers.expectSemicolon(this.eat());
-
     return {
       type: AbstractSyntaxTreeTypes.NodeType.DECLARATION_FN,
       identifier: {
@@ -123,25 +105,31 @@ class GarbageParser {
 
   private parseIfStmnt(): AbstractSyntaxTreeTypes.IFStatementNode {
     this.eat();
-    this.helpers.expect({ id: LexerGrammarTypes.LangTokenIdentifier.LEFT_PARENTHESES, token: this.eat(), mssg: "Expected an opening parenthesis!" });
-    const condition = this.parseExpr();
-    this.helpers.expect({ id: LexerGrammarTypes.LangTokenIdentifier.RIGHT_PARENTHESES, token: this.eat(), mssg: "Expected a closing parenthesis!" });
+
+    this.helpers.expecteParenthesis(this.eat());
+    const condition = this.parseExpr() as AbstractSyntaxTreeTypes.Expr;
+    this.helpers.expecteParenthesis(this.eat(), "RIGHT");
+
     const ifBlock = this.parseBlock();
 
-    let alternate: undefined | AbstractSyntaxTreeTypes.ElseStatementNode = undefined;
+    let alternate: undefined | AbstractSyntaxTreeTypes.ElseStatementNode;
 
     if (this.look().id === LexerGrammarTypes.LangTokenIdentifier.ELSE) {
       this.eat();
+
       const elseBlock = this.parseBlock();
+      
       alternate = {
         type: AbstractSyntaxTreeTypes.NodeType.ELSE_STATEMENT,
         block: elseBlock
-      } as AbstractSyntaxTreeTypes.ElseStatementNode
-    } else this.helpers.expectSemicolon(this.eat());
-
+      };
+    } else {
+      this.helpers.expectSemicolon(this.eat());
+    };
+    
     return {
       type: AbstractSyntaxTreeTypes.NodeType.IF_STATEMENT,
-      condition: condition as AbstractSyntaxTreeTypes.Expr,
+      condition,
       block: ifBlock,
       alternate
     };
@@ -150,23 +138,22 @@ class GarbageParser {
   private parseForStmnt(): AbstractSyntaxTreeTypes.ForStatementNode {
     this.eat();
 
-    this.helpers.expect({ id: LexerGrammarTypes.LangTokenIdentifier.LEFT_PARENTHESES, token: this.eat(), mssg: "Expected an opening parenthesis!" });
-
-    const initializer = this.parse();
-    const condition = this.parseExpr();
+    this.helpers.expecteParenthesis(this.eat());
+    const initializer = this.parse() as AbstractSyntaxTreeTypes.VariableDeclarationNode | AbstractSyntaxTreeTypes.Identifier;
+    const condition = this.parseExpr() as AbstractSyntaxTreeTypes.Expr;
     this.helpers.expectSemicolon(this.eat());
     this.helpers.expect({ id: LexerGrammarTypes.LangTokenIdentifier.PREFIX_INCREMENT, token: this.look(), mssg: "Expected a prefix on the loop updater!"});
-    const updater = this.parsePrefix();
-    this.helpers.expect({ id: LexerGrammarTypes.LangTokenIdentifier.RIGHT_PARENTHESES, token: this.eat(), mssg: "Expected a closing parenthesis!" });
+    const updater = this.parsePrefix() as AbstractSyntaxTreeTypes.ExpressionPrefixer;
+    this.helpers.expecteParenthesis(this.eat(), "RIGHT");
 
     const loopBlock = this.parseBlock();
 
     return {
       type: AbstractSyntaxTreeTypes.NodeType.FOR_STATEMENT,
       info: {
-        initializer: initializer as AbstractSyntaxTreeTypes.VariableDeclarationNode | AbstractSyntaxTreeTypes.Identifier,
-        condition: condition as AbstractSyntaxTreeTypes.Expr,
-        updater: updater as AbstractSyntaxTreeTypes.ExpressionPrefixer
+        initializer,
+        condition,
+        updater
       },
       block: loopBlock
     };
@@ -194,11 +181,9 @@ class GarbageParser {
   private parseExprCall(): AbstractSyntaxTreeTypes.CallExpressionNode {
     this.eat();
     const ident = this.eat();
-    this.helpers.expect({ id: LexerGrammarTypes.LangTokenIdentifier.LEFT_PARENTHESES, token: this.eat(), mssg: "Expected an opening parenthesis!" });
-    
+    this.helpers.expecteParenthesis(this.eat()); 
     const args = this.parseParams(true);
-
-    this.helpers.expect({ id: LexerGrammarTypes.LangTokenIdentifier.RIGHT_PARENTHESES, token: this.eat(), mssg: "Expected a closing parenthesis!" });
+    this.helpers.expecteParenthesis(this.eat(), "RIGHT");
 
     return {
       type: AbstractSyntaxTreeTypes.NodeType.EXPR_CALL,
@@ -211,17 +196,9 @@ class GarbageParser {
   };
 
   private parseAssignment(isDeclaring: boolean): AbstractSyntaxTreeTypes.ExpressionAssignmentNode | AbstractSyntaxTreeTypes.TreeNodeType {
-
-    // normally this would be the identifier
     let left: AbstractSyntaxTreeTypes.TreeNodeType = this.parsePrefix();
 
-    // 1. get ident or return value from primary
-    // 2. (OPTIONAL) if declaring is set to true, get a valid type
-    // 3. check wether the current operator is in fact of EQUAL
-    // 4. if it is, reassign the left hand side to create a binary expression
-    // 5. Left hand can be old left, Right hand can be a new this.parse(), and the operator can be "="
-
-    let identType: IdentifierType | null = null;
+    let identType: IdentifierType | undefined;
 
     if (isDeclaring) {
       identType = this.helpers.checkType(this.eat());
@@ -410,7 +387,6 @@ class GarbageParser {
         root.body.push(this.parse());
       };
     
-      // console.log(JSON.stringify(root, null, 2))
       return root;
   };
 };
