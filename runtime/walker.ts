@@ -27,7 +27,6 @@ class GarbageTreeWalker {
 
   private checkParamLenMatch(node: AbstractSyntaxTreeTypes.CallExpressionNode, called: RuntimeTypes.EnvironmentFunction | RuntimeTypes.NativeFunction) {
     const message = "Number of given arguments does not match with the number of required arguments!";
-
     if (called.type === "EnvironmentFunction" && node.arguments.length !== called.value.params.length) {
       throw new GarbageErrors.RuntimeErrors.RuntimeError(message);
     } else if (called.type === "NativeFunction" && node.arguments.length !== called.params.length) {
@@ -35,62 +34,69 @@ class GarbageTreeWalker {
     };
   };
 
-  private evalFnCall(node: AbstractSyntaxTreeTypes.CallExpressionNode) {
-    const called = this.environment.pubObtain(node.calle.name) as RuntimeTypes.EnvironmentFunction | RuntimeTypes.NativeFunction;
+  private checkArgAndParamMatch(arg: RuntimeTypes.RuntimeValue, param: AbstractSyntaxTreeTypes.IdentifierWithType, condition: boolean = arg.type !== param.identifierType) {
+     if (condition) {
+       throw new GarbageErrors.RuntimeErrors.RuntimeError("The type of the given argument and the expected param do not match!");
+     };
+  };
 
-    this.checkParamLenMatch(node, called);
+  private evalNativeFnCall(node: AbstractSyntaxTreeTypes.CallExpressionNode, called: RuntimeTypes.NativeFunction) {
+    const args: any[] = []
 
-    if (called.type === "NativeFunction") {
+    for (let i = 0; i < called.params.length; i++) {
+      const argument = node.arguments[i];
+      const param = called.params[i];
 
-      const args: any[] = []
+      let argValue: RuntimeTypes.RuntimeValue | RuntimeTypes.EnvironmentValue = this.defaultNum();
 
-      for (let i = 0; i < called.params.length; i++) {
-        const argument = node.arguments[i];
-        const param = called.params[i];
-
-        if (argument.type === AbstractSyntaxTreeTypes.NodeType.IDENT) {
-          const argVal = this.environment.pubObtain(argument.name);
-          if (argVal.type !== param.identifierType && param.identifierType !== "Any") {
-            throw new GarbageErrors.RuntimeErrors.RuntimeError("The type of the given argument and the expected param do not match!");
-          };
-
-          args.push(argVal.value);
-        } else {
-          const arg = this.evaluate(argument);
-          if (arg.type !== param.identifierType && param.identifierType !== "Any") {
-            throw new GarbageErrors.RuntimeErrors.RuntimeError("The type of the given argument and the expected param do not match!");
-          };
-
-          args.push(arg.value);
-        };
+      if (argument.type === AbstractSyntaxTreeTypes.NodeType.IDENT) {
+        argValue = this.environment.pubObtain(argument.name) as RuntimeTypes.RuntimeValue;
+      } else {
+      argValue = this.evaluate(argument);
       };
 
-      if (node.calle.name) {
-        called.call.apply(null, args);
-      };
+      this.checkArgAndParamMatch(argValue, param, argValue.type !== param.identifierType && param.identifierType !== "Any");
 
-    } else {
-      this.environment.pushEnvironment();
+      args.push(argValue.value);
+    };
+
+    if (node.calle.name) {
+      called.call.apply(null, args);
+    };
+  };
+
+  private evalDefinedFnCall(node: AbstractSyntaxTreeTypes.CallExpressionNode, called: RuntimeTypes.EnvironmentFunction) {
+    this.environment.pushEnvironment();
     
-      for (let i = 0; i < called.value.params.length; i++) {
+    for (let i = 0; i < called.value.params.length; i++) {
+      const argument = node.arguments[i];
+      const param = called.value.params[i];
 
-        const argument = node.arguments[i];
-        const param = called.value.params[i];
-        if (argument.type === AbstractSyntaxTreeTypes.NodeType.IDENT) {
-          const argumentValue = this.environment.pubObtain(argument.name);
+      if (argument.type === AbstractSyntaxTreeTypes.NodeType.IDENT) {
+        const argumentValue = this.environment.pubObtain(argument.name);
       
-          if (argumentValue.type !== param.identifierType) {
-            throw new GarbageErrors.RuntimeErrors.RuntimeError("The type of the given argument and the expected param do not match!");
-          };
+        if (argumentValue.type !== param.identifierType) {
+          throw new GarbageErrors.RuntimeErrors.RuntimeError("The type of the given argument and the expected param do not match!");
+        };
 
-          const argValue = this.environment.pubObtain(argument.name) as RuntimeTypes.RuntimeValue;
-          this.environment.declareVar(param, false, argValue);
-        } else {
+        const argValue = this.environment.pubObtain(argument.name) as RuntimeTypes.RuntimeValue;
+        this.environment.declareVar(param, false, argValue);
+      } else {
           this.environment.declareVar(param, false, this.evaluate(argument));
         };
       };
 
-    this.evalBlock(called.value.body, false);
+      this.evalBlock(called.value.body, false);
+  };
+
+  private evalFnCall(node: AbstractSyntaxTreeTypes.CallExpressionNode) {
+    const called = this.environment.pubObtain(node.calle.name) as RuntimeTypes.EnvironmentFunction | RuntimeTypes.NativeFunction;
+    this.checkParamLenMatch(node, called);
+
+    if (called.type === "NativeFunction") {
+      this.evalNativeFnCall(node, called);
+    } else {
+      this.evalDefinedFnCall(node, called);
     };
   };
 

@@ -1,0 +1,21 @@
+{
+  "type": "Program",
+  "body": [
+    {
+      "type": "DeclarationVariable",
+      "isConstant": false,
+      "assignment": {
+        "type": "ExpressionAssignment",
+        "left": {
+          "type": "Identifier",
+          "name": "s",
+          "identifierType": "String"
+        },
+        "right": {
+          "type": "StringLiteral",
+          "value": "hello world"
+        }
+      }
+    }
+  ]
+}

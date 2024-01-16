@@ -22,9 +22,6 @@ class GarbageNativeFunctions {
     });
   };
 
-  private logger() {
-  };
-
   public get retreive() {
     return this.global;
   };

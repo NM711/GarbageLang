@@ -122,6 +122,7 @@ class GarbageLexer {
       this.key += this.char;
       this.updateLineInfo();
 
+      this.key = this.key.trim();
       if (this.key.length > 0 && !isAlphabet(this.key.charAt(0))) {
         this.syntaxError("Literals must commence with a valid alphabet character!", `${this.key}`);
       };

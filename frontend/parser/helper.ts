@@ -11,7 +11,15 @@ interface ExpectedErrorParams {
 };
 
 class ParserHelpers {
+
   constructor () {};
+
+  public typeSet = new Set([
+    LexerGrammarTypes.LangTokenIdentifier.LITERAL,
+    LexerGrammarTypes.LangTokenIdentifier.STRING,
+    LexerGrammarTypes.LangTokenIdentifier.INT,
+    LexerGrammarTypes.LangTokenIdentifier.FLOAT
+  ]);
 
   public expected ({ id, token, mssg, at }: ExpectedErrorParams) {
     throw new GarbageErrors.FrontendErrors.ParserError({
@@ -30,8 +38,16 @@ class ParserHelpers {
     return token;
   };
 
-  public expectSemicolon(look: Token) {
-    this.expect({ id: LexerGrammarTypes.LangTokenIdentifier.SEMICOLON, token: look, mssg: "Expected ending semicolon!" });
+  public expecteParenthesis(token: Token, type: "LEFT" | "RIGHT" = "LEFT") {
+    if (type === "LEFT") {
+       this.expect({ id: LexerGrammarTypes.LangTokenIdentifier.LEFT_PARENTHESES, token, mssg: "Expected an opening parenthesis!" });
+    } else if (type === "RIGHT") {
+      this.expect({ id: LexerGrammarTypes.LangTokenIdentifier.RIGHT_PARENTHESES, token, mssg: "Expected a closing parenthesis!" });
+    };
+  };
+
+  public expectSemicolon(token: Token) {
+    this.expect({ id: LexerGrammarTypes.LangTokenIdentifier.SEMICOLON, token, mssg: "Expected ending semicolon!" });
   };
 
   public checkType(token: Token): IdentifierType {
